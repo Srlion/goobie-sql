@@ -1,0 +1,43 @@
+# https://github.com/marketplace/actions/github-tag-bump
+
+name: Bump version
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**"
+      - "!README.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+
+      - name: Bump version and push tag
+        id: tag
+        uses: anothrNick/github-tag-action@1.70.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DEFAULT_BUMP: "patch"
+          RELEASE_BRANCHES: "master,main,dev"
+
+      - name: Update version file
+        if: steps.tag.outputs.new_tag != ''
+        run: sed -i 's/VERSION = "[^"]*"/VERSION = "${{ steps.tag.outputs.new_tag }}"/' lua/goobie-sql/init.lua
+
+      - name: Commit version file
+        if: steps.tag.outputs.new_tag != ''
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add lua/goobie-sql/init.lua
+          git commit -m "Update version file to ${{ steps.tag.outputs.new_tag }}"
+          git push origin HEAD:master
