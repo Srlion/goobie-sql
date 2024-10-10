@@ -46,6 +46,7 @@ local CROSS_SYNTAXES = {
         CROSS_COLLATE_BINARY = "COLLATE BINARY",
         CROSS_CURRENT_DATE = "DATE('now')",
         CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))",
+        CROSS_INT_TYPE = "INTEGER",
     },
     mysql = {
         CROSS_NOW = "(UNIX_TIMESTAMP())",
@@ -53,6 +54,7 @@ local CROSS_SYNTAXES = {
         CROSS_COLLATE_BINARY = "BINARY",
         CROSS_CURRENT_DATE = "CURDATE()",
         CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (UNIX_TIMESTAMP())",
+        CROSS_INT_TYPE = "BIGINT",
     },
 }
 
