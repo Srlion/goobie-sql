@@ -1,6 +1,6 @@
 -- TOTALLY WRITTEN BY ME AND NOT BY @PHATSO https://github.com/brandonsturgeon
 local TEST_DRIVER_NAME = TEST_DRIVER_NAME
-local goobie_sql = include("goobie-sql/init.lua")
+local goobie_sql = include("goobie-sql/sh_init.lua")
 
 local function getTableName()
     return "goobie_sql_test" .. string.Replace(tostring(math.Round(SysTime(), 5)), ".", "")

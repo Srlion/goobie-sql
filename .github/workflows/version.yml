@@ -31,13 +31,13 @@ jobs:
 
       - name: Update version file
         if: steps.tag.outputs.new_tag != ''
-        run: sed -i 's/\bVERSION\b = "[^"]*"/VERSION = "${{ steps.tag.outputs.new_tag }}"/' lua/goobie-sql/init.lua
+        run: sed -i 's/\bVERSION\b = "[^"]*"/VERSION = "${{ steps.tag.outputs.new_tag }}"/' lua/goobie-sql/sh_init.lua
 
       - name: Commit version file
         if: steps.tag.outputs.new_tag != ''
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add lua/goobie-sql/init.lua
+          git add lua/goobie-sql/sh_init.lua
           git commit -m "Update version file to ${{ steps.tag.outputs.new_tag }}"
           git push origin HEAD:master

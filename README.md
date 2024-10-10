@@ -8,7 +8,7 @@ Goobie SQL is a Garry's Mod library that allows you to interact with MySQL and S
 > MySQL version uses prepared statements, so queries can't have multiple statements, however, sqlite won't stop you from doing that, but it's not recommended. To use multiple statements, you will have to pass `raw = true` to query options, but you won't have anyway to escape strings on MySQL, so only use it for setting up your tables and migrations, nothing else.
 
 ```lua
-local goobie_sql = include("goobie-sql/init.lua")
+local goobie_sql = include("goobie-sql/sh_init.lua")
 
 -- Connect is synchronous for both mysql and sqlite, in 95% of cases, you will only be calling this when your addon is initializing, which makes it easier
 -- to setup your addon, incase you will be spawning lots of connections, you can supply `async_connect` to options
