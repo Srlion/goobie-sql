@@ -18,7 +18,7 @@ local stringfind = string.find
 local stringbyte = string.byte
 local stringchar = string.char
 
-local GOOBIE_MYSQL_VERSION = "0.2.3"
+local GOOBIE_MYSQL_VERSION = "0.0.1"
 GOOBIE_MYSQL_VERSION = GOOBIE_MYSQL_VERSION:gsub("%.", "_")
 
 local PARAMS_PATTERN = "{[%s]*([%w_]+)[%s]*:?[%s]*([%a_,?]*)[%s]*}"
@@ -35,7 +35,7 @@ local goobie_sql = {
     ["NULL"] = {},
     STATES = STATES,
 
-    VERSION = "0.1.0",
+    VERSION = "0.0.1",
 }
 
 local CROSS_SYNTAXES = {
