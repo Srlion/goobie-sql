@@ -47,6 +47,7 @@ local CROSS_SYNTAXES = {
         CROSS_CURRENT_DATE = "DATE('now')",
         CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))",
         CROSS_INT_TYPE = "INTEGER",
+        CROSS_JSON_TYPE = "TEXT",
     },
     mysql = {
         CROSS_NOW = "(UNIX_TIMESTAMP())",
@@ -55,6 +56,7 @@ local CROSS_SYNTAXES = {
         CROSS_CURRENT_DATE = "CURDATE()",
         CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (UNIX_TIMESTAMP())",
         CROSS_INT_TYPE = "BIGINT",
+        CROSS_JSON_TYPE = "JSON",
     },
 }
 
