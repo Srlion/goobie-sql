@@ -293,51 +293,6 @@ local mysql = {}; do
         return data ~= nil
     end
 
-    local Transaction = {}; do
-        local METHODS = {}
-
-        function Transaction.New(txn, conn)
-            return setmetatable({
-                conn = conn,
-                inner = txn,
-                options = conn.options
-            }, {__index = METHODS})
-        end
-
-        function METHODS:IsOpen()
-            return self.inner:IsOpen()
-        end
-
-        METHODS.Ping = CONN_METHODS.Ping
-        METHODS.PreQuery = CONN_METHODS.PreQuery
-        METHODS.Execute = CONN_METHODS.Execute
-        METHODS.Fetch = CONN_METHODS.Fetch
-        METHODS.FetchOne = CONN_METHODS.FetchOne
-        METHODS.TableExists = CONN_METHODS.TableExists
-
-        function METHODS:Commit()
-            return self.inner:Commit()
-        end
-
-        function METHODS:Rollback()
-            return self.inner:Rollback()
-        end
-    end
-
-    function CONN_METHODS:Begin(func)
-        return self.inner:Begin(function(err, txn)
-            local txn_obj = Transaction.New(txn, self)
-            return func(err, txn_obj)
-        end)
-    end
-
-    function CONN_METHODS:BeginSync(func)
-        return self.inner:BeginSync(function(err, txn)
-            local txn_obj = Transaction.New(txn, self)
-            return func(err, txn_obj)
-        end)
-    end
-
     do
         local query_count = 0
         local query_parts = {}
@@ -394,6 +349,52 @@ local mysql = {}; do
             local query = tableconcat(query_parts, nil, 1, query_count)
             return self.inner:Execute(query, options)
         end
+    end
+
+    local Transaction = {}; do
+        local METHODS = {}
+
+        function Transaction.New(txn, conn)
+            return setmetatable({
+                conn = conn,
+                inner = txn,
+                options = conn.options
+            }, {__index = METHODS})
+        end
+
+        function METHODS:IsOpen()
+            return self.inner:IsOpen()
+        end
+
+        METHODS.Ping = CONN_METHODS.Ping
+        METHODS.PreQuery = CONN_METHODS.PreQuery
+        METHODS.Execute = CONN_METHODS.Execute
+        METHODS.Fetch = CONN_METHODS.Fetch
+        METHODS.FetchOne = CONN_METHODS.FetchOne
+        METHODS.TableExists = CONN_METHODS.TableExists
+        METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
+
+        function METHODS:Commit()
+            return self.inner:Commit()
+        end
+
+        function METHODS:Rollback()
+            return self.inner:Rollback()
+        end
+    end
+
+    function CONN_METHODS:Begin(func)
+        return self.inner:Begin(function(err, txn)
+            local txn_obj = Transaction.New(txn, self)
+            return func(err, txn_obj)
+        end)
+    end
+
+    function CONN_METHODS:BeginSync(func)
+        return self.inner:BeginSync(function(err, txn)
+            local txn_obj = Transaction.New(txn, self)
+            return func(err, txn_obj)
+        end)
     end
 end
 -------------------------------------
@@ -632,114 +633,6 @@ local sqlite = {}; do
         return data ~= nil
     end
 
-    local Transaction = {}; do
-        local METHODS = {}
-
-        function Transaction.New()
-            return setmetatable({open = true}, {__index = METHODS})
-        end
-
-        function METHODS:IsOpen()
-            return self.open == true
-        end
-
-        function METHODS:Ping()
-            return true
-        end
-
-        function METHODS:Execute(query, options)
-            options = handle_options(options)
-
-            if not self:IsOpen() then
-                return goobie_sql.ErrorHalt("transaction is closed")
-            end
-
-            options.sync = true
-
-            return CONN_METHODS.Execute(nil, query, options)
-        end
-
-        function METHODS:Fetch(query, options)
-            options = handle_options(options)
-
-            if not self:IsOpen() then
-                return goobie_sql.ErrorHalt("transaction is closed")
-            end
-
-            options.sync = true
-
-            return CONN_METHODS.Fetch(nil, query, options)
-        end
-
-        function METHODS:FetchOne(query, options)
-            options = handle_options(options)
-
-            if not self:IsOpen() then
-                return goobie_sql.ErrorHalt("transaction is closed")
-            end
-
-            options.sync = true
-
-            return CONN_METHODS.FetchOne(nil, query, options)
-        end
-
-        METHODS.TableExists = CONN_METHODS.TableExists
-
-        function METHODS:Commit()
-            if not self:IsOpen() then
-                return goobie_sql.ErrorHalt("transaction is closed")
-            end
-
-            self.open = false
-
-            local err = CONN_METHODS.Execute(nil, "COMMIT TRANSACTION", {sync = true})
-            if err then
-                sqlQuery("ROLLBACK TRANSACTION")
-            end
-
-            return err
-        end
-
-        function METHODS:Rollback()
-            if not self:IsOpen() then
-                return goobie_sql.ErrorHalt("transaction is closed")
-            end
-
-            self.open = false
-
-            local err = CONN_METHODS.Execute(nil, "ROLLBACK TRANSACTION", {sync = true})
-            return err
-        end
-    end
-
-    function CONN_METHODS:Begin(func)
-        local status, err
-
-        local txn = Transaction.New()
-
-        -- if creating the transaction fails, no need to rollback
-        local should_rollback = true
-        -- this probably will only error when you try to begin a transaction inside another transaction
-        err = CONN_METHODS.Execute(nil, "BEGIN TRANSACTION", {sync = true})
-        if err then
-            should_rollback = false
-        end
-
-        status, err = pcall(func, err, txn)
-        if status ~= true then
-            if should_rollback then
-                txn:Rollback()
-            end
-            return goobie_sql.ErrorHaltLevel(err, 0)
-        end
-
-        if txn:IsOpen() then
-            ErrorNoHaltWithStack("forgot to finalize transaction!\n")
-            txn:Rollback()
-        end
-    end
-    CONN_METHODS.BeginSync = CONN_METHODS.Begin
-
     do
         local query_count = 0
         local query_parts = {}
@@ -803,6 +696,115 @@ local sqlite = {}; do
             return self:Execute(query, options)
         end
     end
+
+    local Transaction = {}; do
+        local METHODS = {}
+
+        function Transaction.New()
+            return setmetatable({open = true}, {__index = METHODS})
+        end
+
+        function METHODS:IsOpen()
+            return self.open == true
+        end
+
+        function METHODS:Ping()
+            return true
+        end
+
+        function METHODS:Execute(query, options)
+            options = handle_options(options)
+
+            if not self:IsOpen() then
+                return goobie_sql.ErrorHalt("transaction is closed")
+            end
+
+            options.sync = true
+
+            return CONN_METHODS.Execute(nil, query, options)
+        end
+
+        function METHODS:Fetch(query, options)
+            options = handle_options(options)
+
+            if not self:IsOpen() then
+                return goobie_sql.ErrorHalt("transaction is closed")
+            end
+
+            options.sync = true
+
+            return CONN_METHODS.Fetch(nil, query, options)
+        end
+
+        function METHODS:FetchOne(query, options)
+            options = handle_options(options)
+
+            if not self:IsOpen() then
+                return goobie_sql.ErrorHalt("transaction is closed")
+            end
+
+            options.sync = true
+
+            return CONN_METHODS.FetchOne(nil, query, options)
+        end
+
+        METHODS.TableExists = CONN_METHODS.TableExists
+        METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
+
+        function METHODS:Commit()
+            if not self:IsOpen() then
+                return goobie_sql.ErrorHalt("transaction is closed")
+            end
+
+            self.open = false
+
+            local err = CONN_METHODS.Execute(nil, "COMMIT TRANSACTION", {sync = true})
+            if err then
+                sqlQuery("ROLLBACK TRANSACTION")
+            end
+
+            return err
+        end
+
+        function METHODS:Rollback()
+            if not self:IsOpen() then
+                return goobie_sql.ErrorHalt("transaction is closed")
+            end
+
+            self.open = false
+
+            local err = CONN_METHODS.Execute(nil, "ROLLBACK TRANSACTION", {sync = true})
+            return err
+        end
+    end
+
+    function CONN_METHODS:Begin(func)
+        local status, err
+
+        local txn = Transaction.New()
+
+        -- if creating the transaction fails, no need to rollback
+        local should_rollback = true
+        -- this probably will only error when you try to begin a transaction inside another transaction
+        err = CONN_METHODS.Execute(nil, "BEGIN TRANSACTION", {sync = true})
+        if err then
+            should_rollback = false
+        end
+
+        status, err = pcall(func, err, txn)
+        if status ~= true then
+            if should_rollback then
+                txn:Rollback()
+            end
+            return goobie_sql.ErrorHaltLevel(err, 0)
+        end
+
+        if txn:IsOpen() then
+            ErrorNoHaltWithStack("forgot to finalize transaction!\n")
+            txn:Rollback()
+        end
+    end
+    CONN_METHODS.BeginSync = CONN_METHODS.Begin
 end
 -------------------------------------
 
