@@ -33,7 +33,7 @@ local goobie_sql = {
     ["NULL"] = {},
     STATES = STATES,
 
-    VERSION = "0.1.8",
+    VERSION = "0.1.9",
 }
 
 local CROSS_SYNTAXES = {
