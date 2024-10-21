@@ -353,9 +353,14 @@ local mysql = {}; do
             end
             query_count = query_count - 1 -- remove last comma
 
+            local query = tableconcat(query_parts, nil, 1, query_count)
+
+            if options.return_query then
+                return query, params
+            end
+
             options.params = params
 
-            local query = tableconcat(query_parts, nil, 1, query_count)
             return self.inner:Execute(query, options)
         end
     end
@@ -703,6 +708,11 @@ local sqlite = {}; do
             end
 
             local query = tableconcat(query_parts, nil, 1, query_count)
+
+            if options.return_query then
+                return query, {}
+            end
+
             return self:Execute(query, options)
         end
     end
