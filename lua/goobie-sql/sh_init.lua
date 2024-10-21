@@ -239,13 +239,18 @@ local mysql = {}; do
             query, params = handle_query_parameters(query, params, escape_function)
         end
 
+        query = self:ApplyTablePrefix(query)
+
+        return query, params
+    end
+
+    function CONN_METHODS:ApplyTablePrefix(query)
         local table_prefix = self.options.table_prefix
         local server_table_prefix = self.options.server_table_prefix
         if table_prefix and server_table_prefix then
             query = stringgsub(query, table_prefix, server_table_prefix .. table_prefix)
         end
-
-        return query, params
+        return query
     end
 
     function CONN_METHODS:Execute(query, options)
@@ -285,6 +290,8 @@ local mysql = {}; do
             return goobie_sql.ErrorHalt("table name must be a string")
         end
 
+        name = self:ApplyTablePrefix(name)
+
         local err, data = self.inner:FetchOne("SHOW TABLES LIKE '" .. name .. "'", {sync = true})
         if err then
             return nil, err
@@ -304,6 +311,8 @@ local mysql = {}; do
 
         function CONN_METHODS:UpsertQuery(tbl_name, options)
             query_count = 0
+
+            tbl_name = self:ApplyTablePrefix(tbl_name)
 
             local inserts = options.inserts
             local updates = options.updates
