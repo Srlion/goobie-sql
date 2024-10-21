@@ -382,6 +382,7 @@ local mysql = {}; do
         METHODS.FetchOne = CONN_METHODS.FetchOne
         METHODS.TableExists = CONN_METHODS.TableExists
         METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
+        METHODS.ApplyTablePrefix = CONN_METHODS.ApplyTablePrefix
 
         function METHODS:Commit()
             return self.inner:Commit()
