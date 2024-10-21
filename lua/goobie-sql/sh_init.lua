@@ -18,7 +18,7 @@ local stringfind = string.find
 local stringbyte = string.byte
 local stringchar = string.char
 
-local GOOBIE_MYSQL_VERSION = "0.2.3"
+local GOOBIE_MYSQL_VERSION = "0.2.4"
 GOOBIE_MYSQL_VERSION = GOOBIE_MYSQL_VERSION:gsub("%.", "_")
 
 local PARAMS_PATTERN = "{[%s]*([%w_]+)[%s]*:?[%s]*([%a_,?]*)[%s]*}"
