@@ -11,8 +11,6 @@ local tableconcat = table.concat
 local tableHasValue = table.HasValue
 
 local stringformat = string.format
-local stringrep = string.rep
-local stringsub = string.sub
 local stringgsub = string.gsub
 local stringfind = string.find
 local stringbyte = string.byte
@@ -93,6 +91,19 @@ function goobie_sql.SetTypeFunc(func)
     type = func
 end
 -------------------------------------
+
+local function handle_no_escape_value(v)
+    local v_type = type(v)
+    if v_type == "string" then
+        return "'" .. v .. "'"
+    elseif v_type == "number" then
+        return v
+    elseif v_type == "boolean" then
+        return v and "TRUE" or "FALSE"
+    else
+        return goobie_sql.ErrorHalt("invalid type '%s' was passed to escape '%s'", v_type, v)
+    end
+end
 
 local handle_query_parameters; do
     local fquery_params
@@ -248,7 +259,7 @@ local mysql = {}; do
         local table_prefix = self.options.table_prefix
         local server_table_prefix = self.options.server_table_prefix
         if table_prefix and server_table_prefix then
-            query = stringgsub(query, table_prefix, server_table_prefix .. table_prefix)
+            query = stringgsub(query, "%$" .. table_prefix, server_table_prefix .. table_prefix)
         end
         return query
     end
@@ -316,8 +327,10 @@ local mysql = {}; do
 
             local inserts = options.inserts
             local updates = options.updates
+            local no_escape_columns = options.no_escape_columns
 
-            local params = {}
+            local params = {nil, nil, nil, nil, nil, nil}
+            local values = {nil, nil, nil, nil, nil, nil}
 
             -- INSERT INTO `tbl_name`(`column1`, ...) VALUES(?, ?, ...) ON DUPLICATE KEY UPDATE `column1`=VALUES(`column1`), ...
             insert_to_query("INSERT INTO`")
@@ -327,18 +340,17 @@ local mysql = {}; do
             for column, value in pairs(inserts) do
                 insert_to_query("`" .. column .. "`")
                 insert_to_query(",")
-                tableinsert(params, value)
+                if no_escape_columns and tableHasValue(no_escape_columns, column) then
+                    tableinsert(values, handle_no_escape_value(value))
+                else
+                    tableinsert(values, "?")
+                    tableinsert(params, value)
+                end
             end
             query_count = query_count - 1 -- remove last comma
 
             insert_to_query(")VALUES(")
-            do
-                local placeholders = stringrep("?,", #params)
-                placeholders = stringsub(placeholders, 1, -2) -- remove last comma
-
-                insert_to_query(placeholders)
-            end
-
+            insert_to_query(tableconcat(values, ","))
             insert_to_query(")ON DUPLICATE KEY UPDATE")
 
             -- basically, if there are no updates, we just update the first column with itself
@@ -525,12 +537,22 @@ local sqlite = {}; do
             query, params = handle_query_parameters(query, params, escape_function)
         end
 
+        query = self:ApplyTablePrefix(query)
+
         return query, params
     end
 
-    local function handle_query(query, options)
+    function CONN_METHODS:ApplyTablePrefix(query)
+        local table_prefix = self.options.table_prefix
+        if table_prefix then
+            query = stringgsub(query, "%$" .. table_prefix, table_prefix)
+        end
+        return query
+    end
+
+    function CONN_METHODS:HandleQuery(query, options)
         options = handle_options(options)
-        query, options.params = CONN_METHODS.PreQuery(nil, query, options)
+        query, options.params = self:PreQuery(query, options)
 
         local res = sqlQuery(query)
         if res == false then
@@ -551,7 +573,7 @@ local sqlite = {}; do
     end
 
     function CONN_METHODS:Execute(query, options)
-        local err, res = handle_query(query, options)
+        local err, res = self:HandleQuery(query, options)
         if err then
             if options.sync then
                 return err
@@ -584,7 +606,7 @@ local sqlite = {}; do
     end
 
     function CONN_METHODS:Fetch(query, options)
-        local err, res = handle_query(query, options)
+        local err, res = self:HandleQuery(query, options)
         if err then
             if options.sync then
                 return err
@@ -609,7 +631,7 @@ local sqlite = {}; do
     end
 
     function CONN_METHODS:FetchOne(query, options)
-        local err, res = handle_query(query, options)
+        local err, res = self:HandleQuery(query, options)
         if err then
             if options.sync then
                 return err
@@ -640,6 +662,8 @@ local sqlite = {}; do
             return goobie_sql.ErrorHalt("table name must be a string")
         end
 
+        name = self:ApplyTablePrefix(name)
+
         local data = sqlQuery("SELECT name FROM sqlite_master WHERE name=" .. sqlSQLStr(name) .. " AND type='table'")
         if data == false then
             return nil, {message = sqlLastError()}
@@ -660,10 +684,13 @@ local sqlite = {}; do
         function CONN_METHODS:UpsertQuery(tbl_name, options)
             query_count = 0
 
+            tbl_name = self:ApplyTablePrefix(tbl_name)
+
             local primary_keys = options.primary_keys
             local inserts = options.inserts
             local updates = options.updates
-            local binary_columns = options.binary_columns or {}
+            local no_escape_columns = options.no_escape_columns
+            local binary_columns = options.binary_columns
 
             local values = {nil, nil, nil, nil, nil, nil}
 
@@ -674,7 +701,9 @@ local sqlite = {}; do
             for column, value in pairs(inserts) do
                 insert_to_query("`" .. column .. "`")
                 insert_to_query(",")
-                if tableHasValue(binary_columns, column) then
+                if no_escape_columns and tableHasValue(no_escape_columns, column) then
+                    tableinsert(values, handle_no_escape_value(value))
+                elseif binary_columns and tableHasValue(binary_columns, column) then
                     value = goobie_sql.StringToHex(value)
                     tableinsert(values, "X'" .. value .. "'")
                 else
@@ -720,8 +749,12 @@ local sqlite = {}; do
     local Transaction = {}; do
         local METHODS = {}
 
-        function Transaction.New()
-            return setmetatable({open = true}, {__index = METHODS})
+        function Transaction.New(conn)
+            return setmetatable({
+                open = true,
+                conn = conn,
+                options = conn.options
+            }, {__index = METHODS})
         end
 
         function METHODS:IsOpen()
@@ -741,7 +774,7 @@ local sqlite = {}; do
 
             options.sync = true
 
-            return CONN_METHODS.Execute(nil, query, options)
+            return self.conn:Execute(query, options)
         end
 
         function METHODS:Fetch(query, options)
@@ -753,7 +786,7 @@ local sqlite = {}; do
 
             options.sync = true
 
-            return CONN_METHODS.Fetch(nil, query, options)
+            return self.conn.Fetch(query, options)
         end
 
         function METHODS:FetchOne(query, options)
@@ -765,11 +798,12 @@ local sqlite = {}; do
 
             options.sync = true
 
-            return CONN_METHODS.FetchOne(nil, query, options)
+            return self.conn.FetchOne(query, options)
         end
 
         METHODS.TableExists = CONN_METHODS.TableExists
         METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
+        METHODS.ApplyTablePrefix = CONN_METHODS.ApplyTablePrefix
 
         function METHODS:Commit()
             if not self:IsOpen() then
@@ -778,7 +812,7 @@ local sqlite = {}; do
 
             self.open = false
 
-            local err = CONN_METHODS.Execute(nil, "COMMIT TRANSACTION", {sync = true})
+            local err = self.conn.Execute("COMMIT TRANSACTION", {sync = true})
             if err then
                 sqlQuery("ROLLBACK TRANSACTION")
             end
@@ -793,7 +827,7 @@ local sqlite = {}; do
 
             self.open = false
 
-            local err = CONN_METHODS.Execute(nil, "ROLLBACK TRANSACTION", {sync = true})
+            local err = self.conn.Execute("ROLLBACK TRANSACTION", {sync = true})
             return err
         end
     end
@@ -801,12 +835,12 @@ local sqlite = {}; do
     function CONN_METHODS:Begin(func)
         local status, err
 
-        local txn = Transaction.New()
+        local txn = Transaction.New(self)
 
         -- if creating the transaction fails, no need to rollback
         local should_rollback = true
         -- this probably will only error when you try to begin a transaction inside another transaction
-        err = CONN_METHODS.Execute(nil, "BEGIN TRANSACTION", {sync = true})
+        err = self.conn.Execute("BEGIN TRANSACTION", {sync = true})
         if err then
             should_rollback = false
         end
