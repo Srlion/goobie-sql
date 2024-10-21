@@ -793,7 +793,7 @@ local sqlite = {}; do
 
         status, err = pcall(func, err, txn)
         if status ~= true then
-            if should_rollback then
+            if should_rollback and txn:IsOpen() then
                 txn:Rollback()
             end
             return goobie_sql.ErrorHaltLevel(err, 0)
