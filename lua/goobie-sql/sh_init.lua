@@ -840,7 +840,7 @@ local sqlite = {}; do
         -- if creating the transaction fails, no need to rollback
         local should_rollback = true
         -- this probably will only error when you try to begin a transaction inside another transaction
-        err = self.conn.Execute("BEGIN TRANSACTION", {sync = true})
+        err = txn.conn.Execute("BEGIN TRANSACTION", {sync = true})
         if err then
             should_rollback = false
         end
