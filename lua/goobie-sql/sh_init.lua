@@ -786,7 +786,7 @@ local sqlite = {}; do
 
             options.sync = true
 
-            return self.conn.Fetch(query, options)
+            return self.conn:Fetch(query, options)
         end
 
         function METHODS:FetchOne(query, options)
@@ -798,7 +798,7 @@ local sqlite = {}; do
 
             options.sync = true
 
-            return self.conn.FetchOne(query, options)
+            return self.conn:FetchOne(query, options)
         end
 
         METHODS.TableExists = CONN_METHODS.TableExists
@@ -812,7 +812,7 @@ local sqlite = {}; do
 
             self.open = false
 
-            local err = self.conn.Execute("COMMIT TRANSACTION", {sync = true})
+            local err = self.conn:Execute("COMMIT TRANSACTION", {sync = true})
             if err then
                 sqlQuery("ROLLBACK TRANSACTION")
             end
@@ -827,7 +827,7 @@ local sqlite = {}; do
 
             self.open = false
 
-            local err = self.conn.Execute("ROLLBACK TRANSACTION", {sync = true})
+            local err = self.conn:Execute("ROLLBACK TRANSACTION", {sync = true})
             return err
         end
     end
