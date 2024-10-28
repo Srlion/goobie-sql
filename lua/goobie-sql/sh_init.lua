@@ -246,11 +246,11 @@ local mysql = {}; do
         local params = options.params
         query = stringgsub(query, "{([%w_]+)}", CROSS_SYNTAXES.mysql)
 
+        query = self:ApplyTablePrefix(query)
+
         if not options.raw then
             query, params = handle_query_parameters(query, params, escape_function)
         end
-
-        query = self:ApplyTablePrefix(query)
 
         return query, params
     end
@@ -533,11 +533,11 @@ local sqlite = {}; do
         local params = options.params
         query = stringgsub(query, "{([%w_]+)}", CROSS_SYNTAXES.sqlite)
 
+        query = self:ApplyTablePrefix(query)
+
         if not options.raw then
             query, params = handle_query_parameters(query, params, escape_function)
         end
-
-        query = self:ApplyTablePrefix(query)
 
         return query, params
     end
