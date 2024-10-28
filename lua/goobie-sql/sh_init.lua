@@ -596,11 +596,11 @@ local sqlite = {}; do
             rows_affected = tonumber(query_info.rows_affected),
         }
 
-        if options.sync then
+        if options and options.sync then
             return nil, res
         end
 
-        if options.callback then
+        if options and options.callback then
             options.callback(nil, res)
         end
     end
@@ -621,11 +621,11 @@ local sqlite = {}; do
             return
         end
 
-        if options.sync then
+        if options and options.sync then
             return nil, res
         end
 
-        if options.callback then
+        if options and options.callback then
             options.callback(nil, res)
         end
     end
@@ -648,11 +648,11 @@ local sqlite = {}; do
 
         local first_row = res[1]
 
-        if options.sync then
+        if options and options.sync then
             return nil, first_row
         end
 
-        if options.callback then
+        if options and options.callback then
             options.callback(nil, first_row)
         end
     end
