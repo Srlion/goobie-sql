@@ -246,22 +246,11 @@ local mysql = {}; do
         local params = options.params
         query = stringgsub(query, "{([%w_]+)}", CROSS_SYNTAXES.mysql)
 
-        query = self:ApplyTablePrefix(query)
-
         if not options.raw then
             query, params = handle_query_parameters(query, params, escape_function)
         end
 
         return query, params
-    end
-
-    function CONN_METHODS:ApplyTablePrefix(query)
-        local table_prefix = self.options.table_prefix
-        local server_table_prefix = self.options.server_table_prefix
-        if table_prefix and server_table_prefix then
-            query = stringgsub(query, "%$" .. table_prefix, server_table_prefix .. table_prefix)
-        end
-        return query
     end
 
     function CONN_METHODS:Execute(query, options)
@@ -301,8 +290,6 @@ local mysql = {}; do
             return goobie_sql.ErrorHalt("table name must be a string")
         end
 
-        name = self:ApplyTablePrefix(name)
-
         local err, data = self.inner:FetchOne("SHOW TABLES LIKE '" .. name .. "'", {sync = true})
         if err then
             return nil, err
@@ -322,8 +309,6 @@ local mysql = {}; do
 
         function CONN_METHODS:UpsertQuery(tbl_name, options)
             query_count = 0
-
-            tbl_name = self:ApplyTablePrefix(tbl_name)
 
             local inserts = options.inserts
             local updates = options.updates
@@ -399,7 +384,6 @@ local mysql = {}; do
         METHODS.FetchOne = CONN_METHODS.FetchOne
         METHODS.TableExists = CONN_METHODS.TableExists
         METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
-        METHODS.ApplyTablePrefix = CONN_METHODS.ApplyTablePrefix
 
         function METHODS:Commit()
             return self.inner:Commit()
@@ -533,21 +517,11 @@ local sqlite = {}; do
         local params = options.params
         query = stringgsub(query, "{([%w_]+)}", CROSS_SYNTAXES.sqlite)
 
-        query = self:ApplyTablePrefix(query)
-
         if not options.raw then
             query, params = handle_query_parameters(query, params, escape_function)
         end
 
         return query, params
-    end
-
-    function CONN_METHODS:ApplyTablePrefix(query)
-        local table_prefix = self.options.table_prefix
-        if table_prefix then
-            query = stringgsub(query, "%$" .. table_prefix, table_prefix)
-        end
-        return query
     end
 
     function CONN_METHODS:HandleQuery(query, options)
@@ -662,8 +636,6 @@ local sqlite = {}; do
             return goobie_sql.ErrorHalt("table name must be a string")
         end
 
-        name = self:ApplyTablePrefix(name)
-
         local data = sqlQuery("SELECT name FROM sqlite_master WHERE name=" .. sqlSQLStr(name) .. " AND type='table'")
         if data == false then
             return nil, {message = sqlLastError()}
@@ -683,8 +655,6 @@ local sqlite = {}; do
 
         function CONN_METHODS:UpsertQuery(tbl_name, options)
             query_count = 0
-
-            tbl_name = self:ApplyTablePrefix(tbl_name)
 
             local primary_keys = options.primary_keys
             local inserts = options.inserts
@@ -803,7 +773,6 @@ local sqlite = {}; do
 
         METHODS.TableExists = CONN_METHODS.TableExists
         METHODS.UpsertQuery = CONN_METHODS.UpsertQuery
-        METHODS.ApplyTablePrefix = CONN_METHODS.ApplyTablePrefix
 
         function METHODS:Commit()
             if not self:IsOpen() then
