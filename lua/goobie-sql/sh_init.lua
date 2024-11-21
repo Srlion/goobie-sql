@@ -39,7 +39,6 @@ local goobie_sql = {
 local CROSS_SYNTAXES = {
     sqlite = {
         CROSS_NOW = "(CAST(strftime('%s', 'now') AS INTEGER))",
-        CROSS_NOW_DEFAULT = "(CAST(strftime('%s', 'now') AS INTEGER))",
         -- INTEGER PRIMARY KEY auto increments in SQLite, see https://www.sqlite.org/autoinc.html
         CROSS_PRIMARY_AUTO_INCREMENTED = "INTEGER PRIMARY KEY",
         CROSS_COLLATE_BINARY = "COLLATE BINARY",
@@ -49,8 +48,7 @@ local CROSS_SYNTAXES = {
         CROSS_JSON_TYPE = "TEXT",
     },
     mysql = {
-        CROSS_NOW = "UNIX_TIMESTAMP()",
-        CROSS_NOW_DEFAULT = "(UNIX_TIMESTAMP())",
+        CROSS_NOW = "(UNIX_TIMESTAMP())",
         CROSS_PRIMARY_AUTO_INCREMENTED = "BIGINT AUTO_INCREMENT PRIMARY KEY",
         CROSS_COLLATE_BINARY = "BINARY",
         CROSS_CURRENT_DATE = "CURDATE()",
