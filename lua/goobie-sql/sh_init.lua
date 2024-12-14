@@ -36,6 +36,19 @@ local goobie_sql = {
     VERSION = "0.1.20",
 }
 
+do
+    local error_mt = {
+        __tostring = function(self)
+            local message = type(self.message) == "string" and self.message or "unknown error"
+            return message
+        end
+    }
+
+    function goobie_sql.ErrorObj(message)
+        return setmetatable({message = message}, error_mt)
+    end
+end
+
 local CROSS_SYNTAXES = {
     sqlite = {
         CROSS_NOW = "(CAST(strftime('%s', 'now') AS INTEGER))",
@@ -530,7 +543,8 @@ local sqlite = {}; do
 
         local res = sqlQuery(query)
         if res == false then
-            local err = {message = sqlLastError()}
+            local last_error = sqlLastError()
+            local err = goobie_sql.ErrorObj(last_error)
 
             if options.sync then
                 return err
@@ -638,7 +652,8 @@ local sqlite = {}; do
 
         local data = sqlQuery("SELECT name FROM sqlite_master WHERE name=" .. sqlSQLStr(name) .. " AND type='table'")
         if data == false then
-            return nil, {message = sqlLastError()}
+            local last_error = sqlLastError()
+            return nil, goobie_sql.ErrorObj(last_error)
         end
 
         return data ~= nil
