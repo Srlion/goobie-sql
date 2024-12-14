@@ -353,7 +353,8 @@ local mysql = {}; do
 
             -- basically, if there are no updates, we just update the first column with itself
             if updates == nil or #updates == 0 then
-                updates = {next(inserts)}
+                local next_key = next(inserts)
+                updates = {next_key}
             end
 
             for i = 1, #updates do
