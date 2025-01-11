@@ -126,7 +126,10 @@ local handle_query_parameters; do
         -- local no_quotes = options:find("no_quotes") ~= nil
         local no_escape = stringfind(options, "no_escape", 1, true) ~= nil
         local is_binary = stringfind(options, "binary", 1, true) ~= nil
-        local raw_value = fquery_params[tonumber(key)] or fquery_params[key]
+        local raw_value = fquery_params[tonumber(key)]
+        if raw_value == nil then
+            raw_value = fquery_params[key]
+        end
 
         if raw_value == nil then
             return goobie_sql.ErrorHalt("missing parameter for query: %s", key)
