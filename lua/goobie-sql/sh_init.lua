@@ -33,7 +33,7 @@ local goobie_sql = {
     ["NULL"] = {},
     STATES = STATES,
 
-    VERSION = "0.1.22",
+    VERSION = "0.1.23",
 }
 
 do
