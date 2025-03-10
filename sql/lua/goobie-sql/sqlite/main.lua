@@ -82,14 +82,10 @@ function Conn:PingSync()
 end
 
 local sqlite_SQLStr = sql.SQLStr
-local escape_function = function(value, opts)
+local escape_function = function(value)
     local value_type = type(value)
     if value_type == "string" then
-        if opts.is_binary then
-            return "X'" .. common.StringToHex(value) .. "'"
-        else
-            return (sqlite_SQLStr(value))
-        end
+        return (sqlite_SQLStr(value))
     elseif value_type == "number" then
         return tostring(value)
     elseif value_type == "boolean" then
