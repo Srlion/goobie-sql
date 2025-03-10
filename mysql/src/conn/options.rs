@@ -25,12 +25,6 @@ impl Options {
         Ok(())
     }
 
-    fn parse_uri(&mut self, l: lua::State, idx: i32) -> Result<()> {
-        let uri = l.get_string_unchecked(idx);
-        self.inner = uri.parse()?;
-        Ok(())
-    }
-
     //     fn parse_on_fns(&mut self, l: lua::State, arg_n: i32) -> Result<()> {
     //         // if l.get_field_type_or_nil(arg_n, c"on_error", LUA_TFUNCTION)? {
     //         //     self.on_error = l.reference();
@@ -41,49 +35,49 @@ impl Options {
 
     fn parse_uri_options(&mut self, l: lua::State, arg_n: i32) -> Result<()> {
         if l.get_field_type_or_nil(arg_n, c"uri", LUA_TSTRING)? {
-            self.parse_uri(l, -1)?;
-        } else {
-            if l.get_field_type_or_nil(arg_n, c"host", LUA_TSTRING)?
-                || l.get_field_type_or_nil(arg_n, c"hostname", LUA_TSTRING)?
-            {
-                let hot = l.get_string_unchecked(-1); // 😲
-                self.inner = self.inner.clone().host(&hot);
-                l.pop();
-            }
+            let uri = l.get_string_unchecked(-1);
+            self.inner = uri.parse()?;
+            l.pop();
+        }
 
-            if l.get_field_type_or_nil(arg_n, c"port", LUA_TNUMBER)? {
-                let port = l.to_number(-1) as u16;
-                self.inner = self.inner.clone().port(port);
-                l.pop();
-            }
+        if l.get_field_type_or_nil(arg_n, c"host", LUA_TSTRING)?
+            || l.get_field_type_or_nil(arg_n, c"hostname", LUA_TSTRING)?
+        {
+            let hot = l.get_string_unchecked(-1); // 😲
+            self.inner = self.inner.clone().host(&hot);
+            l.pop();
+        }
 
-            if l.get_field_type_or_nil(arg_n, c"username", LUA_TSTRING)?
-                || l.get_field_type_or_nil(arg_n, c"user", LUA_TSTRING)?
-            {
-                let user = l.get_string_unchecked(-1);
-                self.inner = self.inner.clone().username(&user);
-                l.pop();
-            }
+        if l.get_field_type_or_nil(arg_n, c"port", LUA_TNUMBER)? {
+            let port = l.to_number(-1) as u16;
+            self.inner = self.inner.clone().port(port);
+            l.pop();
+        }
 
-            if l.get_field_type_or_nil(arg_n, c"password", LUA_TSTRING)? {
-                let pass = l.get_string_unchecked(-1);
-                self.inner = self.inner.clone().password(&pass);
-                l.pop();
-            } else {
-                bail!("Password is required!");
-            }
+        if l.get_field_type_or_nil(arg_n, c"username", LUA_TSTRING)?
+            || l.get_field_type_or_nil(arg_n, c"user", LUA_TSTRING)?
+        {
+            let user = l.get_string_unchecked(-1);
+            self.inner = self.inner.clone().username(&user);
+            l.pop();
+        }
 
-            if l.get_field_type_or_nil(arg_n, c"database", LUA_TSTRING)?
-                || l.get_field_type_or_nil(arg_n, c"db", LUA_TSTRING)?
-            {
-                let db = l.get_string_unchecked(-1);
-                self.inner = self.inner.clone().database(db.as_ref());
-                l.pop();
-            } else {
-                bail!("Database name is required!");
-            }
+        if l.get_field_type_or_nil(arg_n, c"password", LUA_TSTRING)? {
+            let pass = l.get_string_unchecked(-1);
+            self.inner = self.inner.clone().password(&pass);
+            l.pop();
+        }
 
-            // self.uri = connect_options.build()?;
+        if l.get_field_type_or_nil(arg_n, c"database", LUA_TSTRING)?
+            || l.get_field_type_or_nil(arg_n, c"db", LUA_TSTRING)?
+        {
+            let db = l.get_string_unchecked(-1);
+            self.inner = self.inner.clone().database(db.as_ref());
+            l.pop();
+        }
+
+        if self.inner.get_database().is_none() {
+            bail!("Database name is required!");
         }
 
         Ok(())

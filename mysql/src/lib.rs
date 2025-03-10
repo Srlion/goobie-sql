@@ -28,15 +28,6 @@ fn gmod13_open(l: lua::State) -> i32 {
 
     conn::on_gmod_open(l);
 
-    let lua_code = include_str!("goobie_mysql.lua");
-    let lua_code = lua_code.replace("MAJOR_VERSION_PLACEHOLDER", MAJOR_VERSION);
-    match l.load_string(&cstring(&lua_code)) {
-        Ok(_) => {
-            l.raw_pcall_ignore(0, 0);
-        }
-        Err(e) => panic!("failed to load goobie_mysql.lua: {}", e),
-    }
-
     0
 }
 

@@ -2,6 +2,12 @@
 
 Most changes will be documented here.
 
+## 2.0
+
+Combined goobie-sql and goobie-mysql into one library.
+
+This change was made to make it easier for me to maintain and update the library.
+
 ## 1.0
 
 Whole library rewritten to improve performance and fix some bugs.

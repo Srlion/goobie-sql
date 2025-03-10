@@ -69,7 +69,7 @@ fn extract_column_value(
             let i16: i16 = row.get(column_name);
             lua::Value::F64(i16 as f64)
         }
-        "INT" | "INTEGER" => {
+        "INT" | "INTEGER" | "MEDIUMINT" => {
             let i32: i32 = row.get(column_name);
             lua::Value::F64(i32 as f64)
         }
@@ -85,7 +85,7 @@ fn extract_column_value(
             let u16: u16 = row.get(column_name);
             lua::Value::F64(u16 as f64)
         }
-        "INT UNSIGNED" => {
+        "INT UNSIGNED" | "MEDIUMINT UNSIGNED" => {
             let u32: u32 = row.get(column_name);
             lua::Value::F64(u32 as f64)
         }
@@ -97,7 +97,7 @@ fn extract_column_value(
             let f32: f32 = row.get(column_name);
             lua::Value::F64(f32 as f64)
         }
-        "DOUBLE" => {
+        "DOUBLE" | "REAL" => {
             let f64: f64 = row.get(column_name);
             lua::Value::F64(f64)
         }
@@ -121,6 +121,10 @@ fn extract_column_value(
             let timestamp: DateTime<Utc> = row.get(column_name);
             lua::Value::String(timestamp.to_string())
         }
+        "YEAR" => {
+            let year: i32 = row.get(column_name);
+            lua::Value::F64(year as f64)
+        }
         "BINARY" | "VARBINARY" | "TINYBLOB" | "BLOB" | "MEDIUMBLOB" | "LONGBLOB" | "CHAR"
         | "VARCHAR" | "TEXT" | "TINYTEXT" | "MEDIUMTEXT" | "LONGTEXT" | "JSON" | "ENUM" | "SET" => {
             let binary: Vec<u8> = row.get(column_name);
@@ -128,7 +132,7 @@ fn extract_column_value(
         }
         "BIT" => {
             // figure out what to push, string or a vector or a number
-            bail!("unsupported type: {:?}", column_type);
+            bail!("BIT type is not supported, if you need it, please open an issue explaining how it should be handled");
         }
         _ => {
             bail!("unsupported column type: {}", column_type);

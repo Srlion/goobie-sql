@@ -36,7 +36,6 @@ pub fn handle_error(l: &lua::State, e: &anyhow::Error) {
     l.get_global(GLOBAL_TABLE_NAME_C);
     if l.is_table(-1) {
         l.get_field(-1, c"ERROR_META");
-        l.dump_stack();
         l.set_metatable(-3);
     }
     l.pop();

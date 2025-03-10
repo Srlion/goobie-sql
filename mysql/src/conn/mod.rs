@@ -21,7 +21,7 @@ pub mod state;
 use options::Options as ConnectOptions;
 use state::{AtomicState, State};
 
-use crate::{cstr_from_args, print_goobie, run_async, GLOBAL_TABLE_NAME, GLOBAL_TABLE_NAME_C};
+use crate::{cstr_from_args, run_async, GLOBAL_TABLE_NAME, GLOBAL_TABLE_NAME_C};
 
 const META_TABLE_NAME: LuaCStr = cstr_from_args!(GLOBAL_TABLE_NAME, "_connection");
 
@@ -164,7 +164,6 @@ impl std::fmt::Display for Conn {
 
 impl Drop for Conn {
     fn drop(&mut self) {
-        print_goobie!("GCing connection!");
         let _ = self
             .sender
             .send(ConnMessage::Disconnect(LUA_NOREF));
@@ -219,8 +218,16 @@ fn start_disconnect(l: lua::State) -> Result<i32> {
 fn start_query(l: lua::State, query_type: crate::query::QueryType) -> Result<i32> {
     let conn = l.get_struct::<Conn>(1)?;
 
+    let mut on_error = LUA_NOREF;
+    l.get_field(1, c"on_error");
+    if l.is_function(-1) {
+        on_error = l.reference();
+    } else {
+        l.pop(); // pop the nil
+    }
+
     let query_str = l.check_string(2)?;
-    let mut query = crate::query::Query::new(query_str, query_type);
+    let mut query = crate::query::Query::new(query_str, query_type, on_error);
     query.parse_options(l, 3)?;
 
     let _ = conn.sender.send(ConnMessage::Query(query));

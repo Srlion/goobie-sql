@@ -1,34 +1,17 @@
-name: Build
+name: Build MySQL
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - "**"
-      - "!README.md"
+  workflow_run:
+    workflows: ["Bump Version"]
+    types:
+      - completed
 
 jobs:
-  bump-version:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      new_tag: ${{ steps.bump_version.outputs.new_tag }}
-      new_tag_major: ${{ steps.bump_version.outputs.new_tag_major }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: "0"
-
-      - name: Bump Version
-        id: bump_version
-        uses: Srlion/float-version-semantic@2811c4af2d8e37a37d3b8113ca5a07b4152be2fd
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    needs: bump-version
+    permissions: write-all
+    defaults:
+      run:
+        working-directory: mysql
     strategy:
       matrix:
         os: [linux, windows]
@@ -55,18 +38,26 @@ jobs:
             suffix32: _win32.dll
             suffix64: _win64.dll
     runs-on: ${{ matrix.runs_on }}
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: "0"
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: version
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(cat ../version.txt)" >> $GITHUB_OUTPUT
+          echo "version_major=$(cat ../version_major.txt)" >> $GITHUB_OUTPUT
+
       - name: Set up Rust
         run: rustup toolchain install stable --profile minimal
-
-      - name: Set up rust-cache
-        uses: Swatinem/rust-cache@v2
 
       - name: Install build dependencies
         if: matrix.os == 'linux'
@@ -79,7 +70,7 @@ jobs:
         run: cargo install cargo-set-version
 
       - name: Bump Cargo version
-        run: cargo set-version "${{ needs.bump-version.outputs.new_tag }}.0"
+        run: cargo set-version "${{ steps.get_version.outputs.version }}.0"
 
       - name: Build targets
         run: |
@@ -88,15 +79,15 @@ jobs:
 
       - name: Rename binaries
         run: |
-          mv target/${{ matrix.target1 }}/release/${{ matrix.binary_prefix }}gmsv_goobie_mysql.${{ matrix.file_ext }} target/${{ matrix.target1 }}/release/gmsv_goobie_mysql_${{ needs.bump-version.outputs.new_tag_major }}${{ matrix.suffix32 }}
-          mv target/${{ matrix.target2 }}/release/${{ matrix.binary_prefix }}gmsv_goobie_mysql.${{ matrix.file_ext }} target/${{ matrix.target2 }}/release/gmsv_goobie_mysql_${{ needs.bump-version.outputs.new_tag_major }}${{ matrix.suffix64 }}
+          mv target/${{ matrix.target1 }}/release/${{ matrix.binary_prefix }}gmsv_goobie_mysql.${{ matrix.file_ext }} target/${{ matrix.target1 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix32 }}
+          mv target/${{ matrix.target2 }}/release/${{ matrix.binary_prefix }}gmsv_goobie_mysql.${{ matrix.file_ext }} target/${{ matrix.target2 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix64 }}
 
       - name: Release Artifacts
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: "${{ needs.bump-version.outputs.new_tag }}"
+          tag: "${{ steps.get_version.outputs.version }}"
           artifacts: |
-            target/${{ matrix.target1 }}/release/gmsv_goobie_mysql_${{ needs.bump-version.outputs.new_tag_major }}${{ matrix.suffix32 }}
-            target/${{ matrix.target2 }}/release/gmsv_goobie_mysql_${{ needs.bump-version.outputs.new_tag_major }}${{ matrix.suffix64 }}
+            mysql/target/${{ matrix.target1 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix32 }}
+            mysql/target/${{ matrix.target2 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix64 }}

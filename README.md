@@ -1,427 +1,346 @@
-# Goobie MySQL
+# Goobie SQL
 
-A simple and easy-to-use MySQL client for Garry's Mod.
+A simple, lightweight, and fast MySQL/SQLite library for Garry's Mod.
 
-## Version Information
+## Features
 
-The module exposes version constants that you can use to verify or log the library version:
-
-- **`goobie_mysql.VERSION`**: Contains the complete version string.
-- **`goobie_mysql.MAJOR_VERSION`**: Contains the major version number.
-
-## LuaLS
-
-You can now use [LuaLS](https://github.com/LuaLS/lua-language-server) to get autocomplete and syntax highlighting for the library!
-
-You can find the meta file in `luals/goobie_mysql.lua` (Don't ask me how to install because I don't know).
+- MySQL and SQLite.
+- Asynchronous and synchronous queries.
+- Easy to use transactions. (Using coroutines)
+- Simple migrations system.
+- One-file library.
 
 ## Installation
 
-1. Download the latest version from the [GitHub releases](https://github.com/Srlion/goobie-mysql/releases/latest).
-2. Extract the module to your Garry's Mod `lua/bin` directory.
+Download the latest `goobie-sql.lua` from [GitHub releases](https://github.com/Srlion/goobie-sql/releases/latest).
 
-**Note:** To avoid conflicts when multiple addons use different versions of the library, require the specific version you need:
+- If you are going to use MySQL, also download the `gmsv_goobie_mysql_x_x_x.dll` from [GitHub releases](https://github.com/Srlion/goobie-sql/releases/latest). Extract it to `garrysmod/lua/bin/gmsv_goobie_mysql_x_x_x.dll`.
 
-```lua
-require("goobie_mysql_1")
+Add `goobie-sql.lua` to your addon folder in `thirdparty`.
 
----@type goobie_mysql
-local goobie_mysql = goobie_mysql_1
-```
+## Usage
 
-When installing the library, ensure you select the version you intend to use.
-
-Previously, it was using SemVer, but I've changed it to use Float-Versioning.
-
-## Establishing a Connection
-
-Create a connection object using `goobie_mysql.NewConn`. You can specify connection options in two ways:
-
-### Using a URI
-
-#### URI Format
-
-The URI format is `mysql://[user[:password]@][host][:port]/[database][?properties]`.
+#### SQLite
 
 ```lua
-local conn = goobie_mysql.NewConn({
-    uri = "mysql://username:password@host:port/database"
+local goobie_sql = include("myaddon/thirdparty/goobie-sql.lua")
+local conn = goobie_sql.NewConn({
+    driver = "sqlite",
 })
 ```
 
-### Using Individual Credentials
+#### MySQL
 
 ```lua
-local conn = goobie_mysql.NewConn({
-    host = "localhost",
-    username = "user",
-    password = "pass",
-    database = "mydb"
+local goobie_sql = include("myaddon/thirdparty/goobie-sql.lua")
+local conn = goobie_sql.NewConn({
+    driver = "mysql",
+    uri = "mysql://USERNAME:PASSWORD@HOST/DATABASE",
 })
 ```
 
-Additional (optional) settings include:
-
-- `charset` (e.g., `"utf8mb4"`)
-- `collation` (e.g., `"utf8mb4_0900_ai_ci"`)
-- `timezone` (e.g., `"UTC"`)
-- `statement_cache_capacity` (e.g., `100`)
-- `socket` (e.g., `"/path/to/socket"`)
-
-### Start the connection using either:
-
-#### Asynchronous Connection
+## Documentation
 
 ```lua
-conn:Start(function(err)
-    if err then
-        print("Connection failed: " .. err.message)
-    else
-        print("Connected successfully")
+-- NewConn Starts a connection automatically synchronously, if you want to use it asynchronously, pass a function as the second argument.
+local conn = goobie_sql.NewConn({
+    driver = "mysql", -- or "sqlite"
+
+    -- called when a query returns an error
+    on_error = function(err)
+    end,
+
+    -- MySQL specific options
+
+    -- The URI format is `mysql://[user[:password]@][host][:port]/[database][?properties]`.
+    -- Read more info here https://docs.rs/sqlx/latest/sqlx/mysql/struct.MySqlConnectOptions.html
+    uri = "mysql://USERNAME:PASSWORD@HOST/DATABASE",
+    -- OR
+    host = "127.0.0.1",
+    port = 3306,
+    username = "root",
+    password = "1234",
+    database = "test",
+
+    charset = "utf8mb4",
+    collation = "utf8mb4_unicode_ci",
+    timezone = "UTC",
+    statement_cache_capacity = 100,
+    socket = "/tmp/mysql.sock",
+})
+```
+
+### Error object
+
+```lua
+{
+    message = string,
+    code = number|nil,
+    sqlstate = string|nil,
+}
+```
+
+- Has `__tostring` metamethod that returns a formatted string.
+
+### Query options
+
+```lua
+{
+    params = table, -- {1, 3, 5}
+    callback = function(err, res),
+    end,
+    -- if true, the params will not be used and you can have multi statement queries.
+    raw = boolean
+}
+```
+
+### Connection methods
+
+`Conn:Start(function(err) end)`
+
+- Attempts to reconnect if the connection is lost.
+
+`Conn:StartSync()`
+
+- Attempts to reconnect if the connection is lost.
+- Throws an error if the connection fails.
+
+`Conn:Disconnect(function(err) end)`
+
+- Disconnects from the database asynchronously.
+
+`Conn:DisconnectSync()` -> `err`
+
+- Disconnects from the database synchronously.
+- Unlike `Conn:StartSync`, this function returns an error if the connection fails.
+
+`Conn:State()` -> `state: number`
+
+`Conn:StateName()` -> `state: string`
+
+- Returns the current state of the connection as a string.
+
+`Conn:ID()` -> `id: number`
+
+- Returns the id of the inner mysql connection, it's incremental for each inner connection that is created.
+- Returns 1 if it's sqlite connection.
+
+`Conn:Host()` -> `host: string`
+
+`Conn:Port()` -> `port: number`
+
+`Conn:Ping(function(err, latency) end)`
+
+- Pings the database to check the connection status.
+- **Note:** It's generally not recommended to use this method to check if a connection is alive, as it may not be reliable. For more information, refer to [this article](https://www.percona.com/blog/checking-for-a-live-database-connection-considered-harmful/).
+
+`Conn:PingSync()` -> `err, latency`
+
+- Pings the database to check the connection status.
+
+### Query methods
+
+`Conn:Run(query: string, opts: table)`
+
+- Runs a query asynchronously.
+- Callback gets called with `err` if the query fails. Nothing is passed if the query succeeds.
+
+`Conn:RunSync(query: string, opts: table)` -> `err`
+
+`Conn:Execute(query: string, opts: table)` -> `err, res`
+
+- Executes a query asynchronously.
+- Callback gets called with `err, res` where `res` is a table with the following fields:
+  - `last_insert_id: number`
+  - `rows_affected: number`
+
+`Conn:ExecuteSync(query: string, opts: table)` -> `err, res`
+
+`Conn:Fetch(query: string, opts: table)` -> `err, res`
+
+- Fetches a query asynchronously.
+- Callback gets called with `err, res` where `res` is an array of rows.
+
+`Conn:FetchSync(query: string, opts: table)` -> `err, res`
+
+`Conn:FetchOne(query: string, opts: table)` -> `err, res`
+
+- Fetches a single row asynchronously.
+- Callback gets called with `err, res` where `res` is a single row.
+
+`Conn:FetchOneSync(query: string, opts: table)` -> `err, res`
+
+#### Example
+
+```lua
+conn:Execute("INSERT INTO test_table (value, value2) VALUES ({1}, {2})", {
+    params = {"test", "test2"},
+    callback = function(err, res)
+        print(err, res)
     end
-end)
+})
 ```
 
-#### Synchronous Connection
+### UpsertQuery
 
 ```lua
-conn:StartSync()
+local opts = {
+    -- primary keys that could conflict, basically the unique/primary key
+    primary_keys = { "id" },
+    -- will try to insert these values, if it fails due to a conflict, it will update the values
+    inserts = {
+        id = 1,
+        value = "test",
+    },
+    -- will update these values, if it fails due to a conflict, it will insert the values
+    updates = {
+        value = "test2"
+    },
+    binary_columns = { "value" }, -- if you want to insert binary data, you need to specify the columns that are binary, this is just sqlite specific till Rubat adds https://github.com/Facepunch/garrysmod-requests/issues/2654
+    callback = function(err, res)
+    end,
+}
+
+Conn:UpsertQuery("test_table", opts)
+local err, res = Conn:UpsertQuerySync("test_table", opts)
 ```
 
-> **Note:** `StartSync` throws an error on failure, so consider using `pcall` to handle errors.
+### Transactions
 
-## Connection States
+Inside `Begin(Sync)`, you don't use callback, instead queries return errors and results directly.
 
-After starting a connection, you can check its state using the following methods:
-
-- **Numeric State:** `conn:State()`
-  Returns a number corresponding to one of the state constants defined in `goobie_mysql.STATES`.
-
-- **State Name:** `conn:StateName()`
-  Returns a string representation of the current state (e.g., `"CONNECTED"`).
-
-Available states (available via `goobie_mysql.STATES`):
-
-- `CONNECTED`
-- `CONNECTING`
-- `NOT_CONNECTED`
-- `DISCONNECTED`
-
-Additional helper methods:
-
-- `conn:IsConnected()`
-- `conn:IsConnecting()`
-- `conn:IsNotConnected()`
-- `conn:IsDisconnected()`
-
-## Polling for Connection Events
-
-For asynchronous operations that may not use callbacks directly, you can use the **`conn:Poll()`** method to process connection events.
-
-## Disconnecting
-
-When you need to close the connection, use one of the following methods:
-
-#### Asynchronous Disconnection
+In MySQL, this is achieved by using coroutines to make transactions easier to use.
 
 ```lua
-conn:Disconnect(function(err)
+Conn:Begin(function(err, txn)
     if err then
-        print("Disconnection failed: " .. err.message)
-    else
-        print("Disconnected successfully")
-    end
-end)
-```
-
-#### Synchronous Disconnection
-
-```lua
-local err = conn:DisconnectSync()
-if err then
-    print("Disconnection failed: " .. err.message)
-else
-    print("Disconnected successfully")
-end
-```
-
-## Error Handling
-
-Most methods return an `Error` object on failure. This object contains:
-
-- **`message`**: A description of the error.
-- **`code`**: A numeric error code.
-- **`sqlstate`** (optional): The SQL state string provided by MySQL.
-
-Always check for errors after each operation to handle failures gracefully.
-
-## Querying the Database
-
-The module offers methods for running queries, with both asynchronous and synchronous versions.
-
-### Run
-
-For queries like INSERT, UPDATE, or DELETE that don’t return data.
-
-#### Asynchronous
-
-```lua
-conn:Run("INSERT INTO mytable (column) VALUES (?)", {params = {"value"}}, function(err)
-    if err then
-        print("Query failed: " .. err.message)
-    else
-        print("Query executed successfully")
-    end
-end)
-```
-
-#### Synchronous
-
-```lua
-local err = conn:RunSync("INSERT INTO mytable (column) VALUES (?)", {params = {"value"}})
-if err then
-    print("Query failed: " .. err.message)
-else
-    print("Query executed successfully")
-end
-```
-
-### Execute
-
-Like `Run`, but returns `rows_affected` and `last_insert_id`.
-
-#### Asynchronous
-
-```lua
-conn:Execute("INSERT INTO mytable (column) VALUES (?)", {params = {"value"}}, function(err, result)
-    if err then
-        print("Query failed: " .. err.message)
-    else
-        print("Rows affected: " .. result.rows_affected)
-        print("Last insert ID: " .. result.last_insert_id)
-    end
-end)
-```
-
-#### Synchronous
-
-```lua
-local err, result = conn:ExecuteSync("INSERT INTO mytable (column) VALUES (?)", {params = {"value"}})
-if err then
-    print("Query failed: " .. err.message)
-else
-    print("Rows affected: " .. result.rows_affected)
-    print("Last insert ID: " .. result.last_insert_id)
-end
-```
-
-### Fetch
-
-Retrieves multiple rows from a SELECT query.
-
-#### Asynchronous
-
-```lua
-conn:Fetch("SELECT * FROM mytable WHERE column = ?", {params = {"value"}}, function(err, rows)
-    if err then
-        print("Query failed: " .. err.message)
-    else
-        for _, row in ipairs(rows) do
-            print(row.column)
-        end
-    end
-end)
-```
-
-#### Synchronous
-
-```lua
-local err, rows = conn:FetchSync("SELECT * FROM mytable WHERE column = ?", {params = {"value"}})
-if err then
-    print("Query failed: " .. err.message)
-else
-    for _, row in ipairs(rows) do
-        print(row.column)
-    end
-end
-```
-
-### FetchOne
-
-Retrieves a single row from a SELECT query.
-
-#### Asynchronous
-
-```lua
-conn:FetchOne("SELECT * FROM mytable WHERE id = ?", {params = {1}}, function(err, row)
-    if err then
-        print("Query failed: " .. err.message)
-    elseif row then
-        print(row.column)
-    else
-        print("No row found")
-    end
-end)
-```
-
-#### Synchronous
-
-```lua
-local err, row = conn:FetchOneSync("SELECT * FROM mytable WHERE id = ?", {params = {1}})
-if err then
-    print("Query failed: " .. err.message)
-elseif row then
-    print(row.column)
-else
-    print("No row found")
-end
-```
-
-### Query Parameters
-
-To prevent SQL injection, always use the `params` field:
-
-```lua
-{params = {"value1", "value2"}}
-```
-
-For raw queries (such as multi-statement queries), set `raw = true`. Use this option with caution and avoid with untrusted input.
-
-## Transactions
-
-Group queries into a transaction that can be committed or rolled back.
-
-### Asynchronous Transaction
-
-```lua
-conn:Begin(function(err, txn)
-    if err then
-        print("Failed to start transaction: " .. err.message)
         return
     end
-    local err, rows = txn:Fetch("SELECT * FROM mytable")
+    local err, res = txn:Execute("INSERT INTO test_table (value) VALUES ('test')")
     if err then
-        print("Query failed: " .. err.message)
-        txn:Rollback()
+        txn:Rollback() -- you must rollback explicitly if you want to stop execution
         return
     end
     local err = txn:Commit()
-    if err then
-        print("Commit failed: " .. err.message)
-    end
+    print(txn:IsOpen()) -- false
 end)
+
+-- If you want to have it run synchronously, you can use `BeginSync`, it's the the same as `Begin` but instead everything runs synchronously.
 ```
 
-### Synchronous Transaction
+### Cross Syntaxes
+
+Cross syntaxes try to make queries easier to write for both SQLite and MySQL.
+
+Here is a list of current cross syntaxes:
 
 ```lua
-conn:BeginSync(function(err, txn)
-    if err then
-        print("Failed to start transaction: " .. err.message)
-        return
-    end
-    local err = txn:Run("INSERT INTO mytable (column) VALUES ('value')")
-    if err then
-        txn:Rollback()
-        return
-    end
-    txn:Commit()
-end)
+--- SQLite
+{
+    CROSS_NOW = "(CAST(strftime('%s', 'now') AS INTEGER))",
+    -- INTEGER PRIMARY KEY auto increments in SQLite, see https://www.sqlite.org/autoinc.html
+    CROSS_PRIMARY_AUTO_INCREMENTED = "INTEGER PRIMARY KEY",
+    CROSS_COLLATE_BINARY = "COLLATE BINARY",
+    CROSS_CURRENT_DATE = "DATE('now')",
+    CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER))",
+    CROSS_INT_TYPE = "INTEGER",
+    CROSS_JSON_TYPE = "TEXT",
+}
+
+--- MySQL
+{
+    CROSS_NOW = "(UNIX_TIMESTAMP())",
+    CROSS_PRIMARY_AUTO_INCREMENTED = "BIGINT AUTO_INCREMENT PRIMARY KEY",
+    CROSS_COLLATE_BINARY = "BINARY",
+    CROSS_CURRENT_DATE = "CURDATE()",
+    CROSS_OS_TIME_TYPE = "INT UNSIGNED NOT NULL DEFAULT (UNIX_TIMESTAMP())",
+    CROSS_INT_TYPE = "BIGINT",
+    CROSS_JSON_TYPE = "JSON",
+}
 ```
 
-Inside a transaction:
-
-- All query methods (`Run`, `Execute`, `Fetch`, `FetchOne`) are synchronous and do not take a callback.
-- Check transaction status with `txn:IsOpen()`.
-- Finalize the transaction using `txn:Commit()` or `txn:Rollback()`.
-
-## Ping
-
-Test the connection with a ping (note: it’s not a reliable method to check if the connection is alive).
-
-### Asynchronous
+They can be used in the following way:
 
 ```lua
-conn:Ping(function(err, latency)
-    if err then
-        print("Ping failed: " .. err.message)
-    else
-        print("Latency: " .. latency .. "ms")
-    end
-end)
-```
-
-### Synchronous
-
-```lua
-local err, latency = conn:PingSync()
-if err then
-    print("Ping failed: " .. err.message)
-else
-    print("Latency: " .. latency .. "ms")
-end
-```
-
-## Examples
-
-### Simple Query
-
-```lua
-local goobie_mysql = require("goobie_mysql")
-
-local conn = goobie_mysql.NewConn({
-    host = "localhost",
-    username = "user",
-    password = "pass",
-    database = "mydb"
+conn:RunMigrations({
+    {
+        UP = [[
+                CREATE TABLE IF NOT EXISTS test_table (
+                    id {CROSS_PRIMARY_AUTO_INCREMENTED},
+                    value TEXT,
+                    `created_at` {CROSS_OS_TIME_TYPE},
+                );
+            ]],
+        DOWN = [[
+            DROP TABLE test_table;
+        ]]
+    }
 })
 
-conn:StartSync()
-
-local err, rows = conn:FetchSync("SELECT * FROM mytable")
-if err then
-    print("Query failed: " .. err.message)
-else
-    for _, row in ipairs(rows) do
-        print(row.column)
-    end
-end
+conn:RunSync([[
+    SELECT * FROM test_table WHERE `created_at` > {CROSS_NOW};
+]])
 ```
 
-### Transaction Example
+### Migrations
 
 ```lua
-local goobie_mysql = require("goobie_mysql")
-
-local conn = goobie_mysql.NewConn({
-    host = "localhost",
-    username = "user",
-    password = "pass",
-    database = "mydb"
+local conn = goobie_sql.NewConn({
+    driver = "sqlite",
+    addon_name = "test",
 })
 
-conn:StartSync()
+local current_version, first_run = conn:RunMigrations({
+    -- can use string or function for UP and DOWN
+    {
+        UP = [[
+                CREATE TABLE IF NOT EXISTS test_table (
+                    id INTEGER PRIMARY KEY,
+                    value TEXT
+                );
+            ]],
+        DOWN = [[
+            DROP TABLE test_table;
+        ]]
+    },
+    {
+        UP = function(process, conn)
+            process([[
+                CREATE TABLE IF NOT EXISTS test_table (
+                    id INTEGER PRIMARY KEY,
+                    value TEXT
+                );
+            ]])
+        end,
+        DOWN = function(process, conn)
+            process([[
+                DROP TABLE test_table;
+            ]])
+        end,
+    }
+})
 
-conn:BeginSync(function(err, txn)
-    if err then
-        print("Failed to start transaction: " .. err.message)
-        return
-    end
-    local err = txn:Run("INSERT INTO mytable (column) VALUES ('value1')")
-    if err then
-        print("Insert failed: " .. err.message)
-        txn:Rollback()
-        return
-    end
-    local err = txn:Run("INSERT INTO mytable (column) VALUES ('value2')")
-    if err then
-        print("Insert failed: " .. err.message)
-        txn:Rollback()
-        return
-    end
-    local err = txn:Commit()
-    if err then
-        print("Commit failed: " .. err.message)
-    end
-end)
+print(current_version, first_run)
+```
+
+You can also have conditionals in your migrations:
+
+```lua
+conn:RunMigrations({
+    {
+        UP = [[
+            CREATE TABLE IF NOT EXISTS test_table (
+            --@ifdef SQLITE
+                id INTEGER PRIMARY KEY,
+            --@else
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            --@endif
+                value TEXT
+            );
+        ]],
+        DOWN = [[
+            DROP TABLE test_table;
+        ]]
+    }
+})
 ```

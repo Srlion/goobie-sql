@@ -1,0 +1,43 @@
+name: Build SQL Lib
+
+on:
+  workflow_run:
+    workflows: ["Bump Version"]
+    types:
+      - completed
+
+jobs:
+  build:
+    permissions: write-all
+    defaults:
+      run:
+        working-directory: sql
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: version
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(cat ../version.txt)" >> $GITHUB_OUTPUT
+
+      - name: Build targets
+        run: |
+          python3 build.py ${{ steps.get_version.outputs.version }}
+
+      - name: Release Artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "${{ steps.get_version.outputs.version }}"
+          artifacts: sql/goobie-sql.lua

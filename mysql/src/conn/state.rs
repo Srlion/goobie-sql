@@ -5,10 +5,10 @@ use crate::GLOBAL_TABLE_NAME_C;
 #[derive(PartialEq)]
 #[atomic_enum::atomic_enum]
 pub enum State {
-    Connected,
-    Connecting,
-    NotConnected,
-    Disconnected,
+    Connected = 0,
+    Connecting = 1,
+    NotConnected = 2,
+    Disconnected = 3,
 }
 
 impl State {

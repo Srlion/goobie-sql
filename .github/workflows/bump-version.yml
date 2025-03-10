@@ -1,0 +1,41 @@
+name: Bump Version
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**"
+      - "!README.md"
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.bump_version.outputs.new_tag }}
+      new_tag_major: ${{ steps.bump_version.outputs.new_tag_major }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+
+      - name: Bump Version
+        id: bump_version
+        uses: Srlion/float-version-semantic@2811c4af2d8e37a37d3b8113ca5a07b4152be2fd
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output version to file
+        run: |
+          mkdir -p output
+          echo ${{ steps.bump_version.outputs.new_tag }} > output/version.txt
+          echo ${{ steps.bump_version.outputs.new_tag_major }} > output/version_major.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: version
+          path: |
+            output/version.txt
+            output/version_major.txt

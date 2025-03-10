@@ -32,18 +32,20 @@ pub struct Query {
     pub r#type: QueryType,
     pub params: Vec<Param>,
     pub callback: LuaReference,
+    pub on_error: LuaReference,
     pub raw: bool,
     pub result: Result<QueryResult>,
 }
 
 impl Query {
-    pub fn new(query: String, r#type: QueryType) -> Self {
+    pub fn new(query: String, r#type: QueryType, on_error: LuaReference) -> Self {
         Self {
             query,
             r#type,
             raw: false,
             params: Vec::new(),
             callback: LUA_NOREF,
+            on_error,
             result: Ok(QueryResult::Run), // we just need a placeholder
         }
     }
@@ -122,17 +124,24 @@ impl Query {
     }
 
     pub fn process_result(&mut self, l: lua::State) {
-        l.pcall_ignore_func_ref(self.callback.as_static(), || {
-            match &self.result {
-                Ok(query_result) => {
+        match &self.result {
+            Ok(query_result) => {
+                l.pcall_ignore_func_ref(self.callback.as_static(), || {
                     query_result.push_to_lua(&l);
-                }
-                Err(e) => {
+                    0
+                });
+            }
+            Err(e) => {
+                l.pcall_ignore_func_ref(self.on_error.as_static(), || {
+                    handle_error(&l, self.result.as_ref().unwrap_err());
+                    0
+                });
+                l.pcall_ignore_func_ref(self.callback.as_static(), || {
                     handle_error(&l, e);
-                }
-            };
-            0
-        });
+                    0
+                });
+            }
+        };
     }
 }
 
