@@ -55,6 +55,7 @@ local function RunMigrations(conn, migrations, ...)
     local TABLE_NAME = fmt("goobie_sql_migrations_version_%s", addon_name)
 
     local current_version = 0
+    local old_version = 0
 
     do
         local err = conn:RunSync(fmt([[
@@ -88,6 +89,8 @@ local function RunMigrations(conn, migrations, ...)
             first_run = true
         end
     end
+
+    old_version = current_version
 
     -- make sure that migrations has UP, DOWN and version
     for _, migration in ipairs(migrations) do
@@ -152,7 +155,7 @@ local function RunMigrations(conn, migrations, ...)
         REPLACE INTO %s (`id`, `version`) VALUES (1, %d);
     ]], TABLE_NAME, current_version))
 
-    return current_version, first_run
+    return old_version, current_version, first_run
 end
 
 return RunMigrations
