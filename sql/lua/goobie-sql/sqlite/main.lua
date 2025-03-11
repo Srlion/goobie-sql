@@ -119,6 +119,9 @@ end
 
 local function ConnProcessQuery(conn, query, opts, async, exec_func)
     query, opts = prepare_query(query, opts, async)
+    if opts.sync then
+        async = false
+    end
     local err, res = exec_func(query)
     if err then
         local on_error = conn.on_error
@@ -284,7 +287,8 @@ do
             local err, res = conn:ExecuteSync(query, opts)
             return err, res
         else
-            return (conn:Execute(query, opts))
+            local err, res = conn:Execute(query, opts)
+            return err, res
         end
     end
 

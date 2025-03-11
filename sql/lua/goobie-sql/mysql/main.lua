@@ -150,7 +150,14 @@ local function create_query_method(query_type)
 
     Conn[query_type] = function(self, query, opts)
         query, opts = prepare_query(query, opts, true)
-        ConnQueueTask(self, query_func, query, opts)
+        if opts.sync then
+            return ConnSyncOP(self, function(cb)
+                opts.callback = cb
+                ConnQueueTask(self, query_func, query, opts)
+            end)
+        else
+            ConnQueueTask(self, query_func, query, opts)
+        end
     end
 
     Conn[query_type .. "Sync"] = function(self, query, opts)
@@ -254,7 +261,8 @@ do
             local err, res = conn:ExecuteSync(query, opts)
             return err, res
         else
-            return (conn:Execute(query, opts))
+            local err, res = conn:Execute(query, opts)
+            return err, res
         end
     end
 

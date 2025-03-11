@@ -107,8 +107,10 @@ common.CheckQuery = function(query, opts, is_async)
         error("params must be a table", 4)
     end
 
-    if is_async and type(opts.callback) ~= "function" then
-        error("callback must be a function", 4)
+    if not opts.sync then
+        if is_async and type(opts.callback) ~= "function" then
+            error("callback must be a function", 4)
+        end
     end
 
     return opts
