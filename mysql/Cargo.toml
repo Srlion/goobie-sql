@@ -9,12 +9,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gmod = { git = "https://github.com/Srlion/gmod-rs.git", rev = "b0ca2f1" }
-tokio = { version = "1.44.2", default-features = false, features = [
+tokio = { version = "1.45.1", default-features = false, features = [
     "rt-multi-thread",
     "macros",
 ] }
 anyhow = "1.0.96"
-sqlx = { version = "0.8.5", features = [
+sqlx = { version = "0.8.6", features = [
     "runtime-tokio",
     "tls-native-tls",
     "mysql",
@@ -22,9 +22,9 @@ sqlx = { version = "0.8.5", features = [
     "chrono",
 ] }
 atomic_enum = "0.3.0"
-openssl-sys = { version = "0.9.107", features = ["vendored"] }
+openssl-sys = { version = "0.9.109", features = ["vendored"] }
 const_format = "0.2.34"
-tokio-util = { version = "0.7.14", features = ["rt"] }
+tokio-util = { version = "0.7.15", features = ["rt"] }
 
 [profile.release]
 opt-level = 3
