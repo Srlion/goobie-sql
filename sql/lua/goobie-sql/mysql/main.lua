@@ -26,7 +26,6 @@ local table_HasValue = table.HasValue
 local table_concat = table.concat
 local table_insert = table.insert
 local string_format = string.format
-local errorf = common.errorf
 local string_gsub = string.gsub
 
 local CROSS_SYNTAXES = common.CROSS_SYNTAXES.mysql
@@ -122,24 +121,12 @@ function Conn:PingSync()
     return err, res
 end
 
-local ESCAPE_TYPES = {
-    ["string"] = true,
-    ["number"] = true,
-    ["boolean"] = true,
-}
-local function escape_function(value)
-    if ESCAPE_TYPES[type(value)] then
-        return "?"
-    else
-        return errorf("invalid type '%s' was passed to escape '%s'", type(value), value)
-    end
-end
 local function prepare_query(query, opts, is_async)
     opts = CheckQuery(query, opts, is_async)
     query = string_gsub(query, "{([%w_]+)}", CROSS_SYNTAXES)
     local params = opts.params
     if not opts.raw then -- raw queries can't be escaped in sqlx, hopefully they expose an escape function
-        query, params = common.HandleQueryParams(query, params, escape_function)
+        query, params = common.HandleQueryParams(query, params)
     end
     opts.params = params
     return query, opts

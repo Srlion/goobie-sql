@@ -4,16 +4,14 @@ local ConnBeginSync = include("goobie-sql/sqlite/txn.lua")
 local STATES = common.STATES
 
 local type = type
-local tostring = tostring
-local tonumber = tonumber
 local setmetatable = setmetatable
 local table_insert = table.insert
 local string_format = string.format
 local table_HasValue = table.HasValue
 local table_concat = table.concat
-local errorf = common.errorf
 local CheckQuery = common.CheckQuery
 local string_gsub = string.gsub
+local unpack = unpack
 
 local CROSS_SYNTAXES = common.CROSS_SYNTAXES.sqlite
 
@@ -82,33 +80,21 @@ function Conn:PingSync()
 end
 
 local sqlite_SQLStr = sql.SQLStr
-local escape_function = function(value)
-    local value_type = type(value)
-    if value_type == "string" then
-        return (sqlite_SQLStr(value))
-    elseif value_type == "number" then
-        return tostring(value)
-    elseif value_type == "boolean" then
-        return value and "TRUE" or "FALSE"
-    else
-        return errorf("invalid type '%s' was passed to escape '%s'", value_type, value)
-    end
-end
 local function prepare_query(query, opts, is_async)
     opts = CheckQuery(query, opts, is_async)
     query = string_gsub(query, "{([%w_]+)}", CROSS_SYNTAXES)
     local params = opts.params
     if not opts.raw then
-        query, params = common.HandleQueryParams(query, params, escape_function)
+        query, params = common.HandleQueryParams(query, params)
     end
     opts.params = params
     return query, opts
 end
 
-local sqlite_Query = sql.Query
+local sqlite_QueryTyped = sql.QueryTyped
 local sqlite_LastError = sql.LastError
-local function raw_query(query)
-    local res = sqlite_Query(query)
+local function raw_query(query, opts)
+    local res = sqlite_QueryTyped(query, unpack(opts.params))
     if res == false then
         local last_error = sqlite_LastError()
         local err = common.SQLError(last_error)
@@ -122,7 +108,7 @@ local function ConnProcessQuery(conn, query, opts, async, exec_func)
     if opts.sync then
         async = false
     end
-    local err, res = exec_func(query)
+    local err, res = exec_func(query, opts)
     if err then
         local on_error = conn.on_error
         if on_error then
@@ -147,14 +133,14 @@ function Conn:Run(query, opts)
 end
 
 do
-    local function internal_execute(query)
-        local err = raw_query(query)
+    local function internal_execute(query, opts)
+        local err = raw_query(query, opts)
         if err then return err end
-        local info = sqlite_Query("SELECT last_insert_rowid() AS `last_insert_id`, changes() AS `rows_affected`;")
+        local info = sqlite_QueryTyped("SELECT last_insert_rowid() AS `last_insert_id`, changes() AS `rows_affected`;")
         info = info[1]
         local res = {
-            last_insert_id = tonumber(info.last_insert_id),
-            rows_affected = tonumber(info.rows_affected),
+            last_insert_id = info.last_insert_id,
+            rows_affected = info.rows_affected,
         }
         return nil, res
     end
@@ -169,8 +155,8 @@ do
 end
 
 do
-    local function internal_fetch(query)
-        local err, res = raw_query(query)
+    local function internal_fetch(query, opts)
+        local err, res = raw_query(query, opts)
         if err then return err end
         return nil, res or {}
     end
@@ -185,8 +171,8 @@ do
 end
 
 do
-    local function internal_fetch_one(query)
-        local err, res = raw_query(query)
+    local function internal_fetch_one(query, opts)
+        local err, res = raw_query(query, opts)
         if err then return err end
         return nil, res and res[1] or nil
     end
@@ -204,7 +190,8 @@ function Conn:TableExists(name)
     if type(name) ~= "string" then
         return error("table name must be a string")
     end
-    local err, res = raw_query("SELECT name FROM sqlite_master WHERE name=" .. sqlite_SQLStr(name) .. " AND type='table'")
+    local err, res = raw_query(
+        "SELECT name FROM sqlite_master WHERE name=" .. sqlite_SQLStr(name) .. " AND type='table'", { params = {} })
     if err then
         return nil, err
     end
@@ -231,8 +218,8 @@ do
         local inserts = opts.inserts
         local updates = opts.updates
         local no_escape_columns = opts.no_escape_columns
-        local binary_columns = opts.binary_columns
 
+        local params = { nil, nil, nil, nil, nil, nil }
         local values = { nil, nil, nil, nil, nil, nil }
 
         insert_to_query("INSERT INTO`")
@@ -244,11 +231,9 @@ do
             insert_to_query(",")
             if no_escape_columns and table_HasValue(no_escape_columns, column) then
                 table_insert(values, common.HandleNoEscape(value))
-            elseif binary_columns and table_HasValue(binary_columns, column) then
-                value = common.StringToHex(value)
-                table_insert(values, "X'" .. value .. "'")
             else
-                table_insert(values, sqlite_SQLStr(value))
+                table_insert(values, "?")
+                table_insert(params, value)
             end
         end
         query_count = query_count - 1 -- remove last comma
@@ -280,8 +265,10 @@ do
         local query = table_concat(query_parts, nil, 1, query_count)
 
         if opts.return_query then
-            return query, {}
+            return query, params
         end
+
+        opts.params = params
 
         if sync then
             local err, res = conn:ExecuteSync(query, opts)

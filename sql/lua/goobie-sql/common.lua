@@ -156,9 +156,22 @@ end
 local PARAMS_PATTERN = "{[%s]*(%d+)[%s]*}"
 
 local HandleQueryParams; do
-    local fquery_params, fquery_new_params, escape_function
+    local ESCAPE_TYPES = {
+        ["string"] = true,
+        ["number"] = true,
+        ["boolean"] = true,
+    }
+    local function escape_function(value)
+        if ESCAPE_TYPES[type(value)] then
+            return "?"
+        else
+            return errorf("invalid type '%s' was passed to escape '%s'", type(value), value)
+        end
+    end
+
+    local fquery_params, fquery_new_params
     local has_matches = false
-    local gsub_f = function(key, opts)
+    local gsub_f = function(key)
         local raw_value = fquery_params[tonumber(key)]
         if raw_value == nil then
             return errorf("missing parameter for query: %s", key)
@@ -179,10 +192,9 @@ local HandleQueryParams; do
     local EMPTY_QUERY_PARAMS = {}
     ---@return string
     ---@return table
-    function HandleQueryParams(query, params, escape_func)
+    function HandleQueryParams(query, params)
         fquery_new_params = {}
         fquery_params = params
-        escape_function = escape_func
         has_matches = false
 
         -- We don't return the query immediately as that could cause hidden bugs. We must ensure that if the developer is using
