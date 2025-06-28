@@ -91,10 +91,15 @@ local function prepare_query(query, opts, is_async)
     return query, opts
 end
 
+local sqlite_Query = sql.Query
 local sqlite_QueryTyped = sql.QueryTyped
 local sqlite_LastError = sql.LastError
 local function raw_query(query, opts)
-    local res = sqlite_QueryTyped(query, unpack(opts.params))
+    local res; if opts.raw then
+        res = sqlite_Query(query)
+    else
+        res = sqlite_QueryTyped(query, unpack(opts.params))
+    end
     if res == false then
         local last_error = sqlite_LastError()
         local err = common.SQLError(last_error)
