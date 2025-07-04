@@ -7,7 +7,7 @@ local type = type
 
 local common = {
     VERSION = "FULL_VERSION_PLACEHOLDER",
-    NULL = {}
+    NULL = NULL
 }
 common.MAJOR_VERSION = tonumber(common.VERSION:match("(%d+)%.%d+"))
 
