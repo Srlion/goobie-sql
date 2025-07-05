@@ -192,10 +192,8 @@ local opts = {
         id = 1,
         value = "test",
     },
-    -- will update these values, if it fails due to a conflict, it will insert the values
-    updates = {
-        value = "test2"
-    },
+    -- if the insert fails due to a conflict, these values will be updated
+    updates = { "value" },
     binary_columns = { "value" }, -- if you want to insert binary data, you need to specify the columns that are binary, this is just sqlite specific till Rubat adds https://github.com/Facepunch/garrysmod-requests/issues/2654
     callback = function(err, res)
     end,
