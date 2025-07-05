@@ -179,7 +179,7 @@ local HandleQueryParams; do
 
         has_matches = true
 
-        if raw_value == common.NULL or raw_value == nil then
+        if raw_value == common.NULL then
             return "NULL"
         end
 
