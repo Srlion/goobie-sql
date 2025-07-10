@@ -2,6 +2,8 @@
 
 A simple, lightweight, and fast MySQL/SQLite library for Garry's Mod.
 
+> **Note (Added 10/Jul/2025):** The latest version will only work on the next Garry's Mod update (currently available on the dev/x86-64 branch, just waiting for sql.QueryTyped).
+
 ## Features
 
 - MySQL and SQLite.
