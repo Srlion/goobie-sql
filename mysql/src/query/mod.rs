@@ -35,6 +35,7 @@ pub struct Query {
     pub on_error: LuaReference,
     pub raw: bool,
     pub result: Result<QueryResult>,
+    pub trace: Option<String>,
 }
 
 impl Query {
@@ -47,6 +48,7 @@ impl Query {
             callback: LUA_NOREF,
             on_error,
             result: Ok(QueryResult::Run), // we just need a placeholder
+            trace: None,
         }
     }
 
@@ -67,6 +69,11 @@ impl Query {
 
         if l.get_field_type_or_nil(arg_n, c"raw", LUA_TBOOLEAN)? {
             self.raw = l.get_boolean(-1);
+            l.pop();
+        }
+
+        if l.get_field_type_or_nil(arg_n, c"trace", LUA_TSTRING)? {
+            self.trace = Some(l.get_string_unchecked(-1));
             l.pop();
         }
 
@@ -134,6 +141,9 @@ impl Query {
             Err(e) => {
                 l.pcall_ignore_func_ref(self.on_error.as_static(), || {
                     handle_error(&l, self.result.as_ref().unwrap_err());
+                    if let Some(ref trace) = self.trace {
+                        l.push_string(trace);
+                    }
                     0
                 });
                 l.pcall_ignore_func_ref(self.callback.as_static(), || {

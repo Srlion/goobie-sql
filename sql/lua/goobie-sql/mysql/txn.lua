@@ -55,6 +55,10 @@ function TxnQuery(txn, query_type, query, opts)
         return error("transaction is closed")
     end
 
+    if opts.trace == nil then
+        opts.trace = debug.traceback("", 2)
+    end
+
     local conn = txn.conn
     -- we need to set locked to false to make sure queries are not queued
     -- it's not an issue if it errors or not because TxnResume will handle it anyway

@@ -117,7 +117,7 @@ local function ConnProcessQuery(conn, query, opts, async, exec_func)
     if err then
         local on_error = conn.on_error
         if on_error then
-            ProtectedCall(on_error, err)
+            ProtectedCall(on_error, err, debug.traceback("", 2))
         end
     end
     if async then

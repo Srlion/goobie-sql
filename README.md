@@ -49,7 +49,7 @@ local conn = goobie_sql.NewConn({
     driver = "mysql", -- or "sqlite"
 
     -- called when a query returns an error
-    on_error = function(err)
+    on_error = function(err, trace)
     end,
 
     -- MySQL specific options

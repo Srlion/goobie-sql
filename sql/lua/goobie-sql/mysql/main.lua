@@ -137,6 +137,9 @@ local function create_query_method(query_type)
 
     Conn[query_type] = function(self, query, opts)
         query, opts = prepare_query(query, opts, true)
+        if opts.trace == nil then
+            opts.trace = debug.traceback("", 2)
+        end
         if opts.sync then
             return ConnSyncOP(self, function(cb)
                 opts.callback = cb
