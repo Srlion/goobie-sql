@@ -80,8 +80,8 @@ function Conn:PingSync()
 end
 
 local sqlite_SQLStr = sql.SQLStr
-local function prepare_query(query, opts, is_async)
-    opts = CheckQuery(query, opts, is_async)
+local function prepare_query(query, opts)
+    opts = CheckQuery(query, opts)
     query = string_gsub(query, "{([%w_]+)}", CROSS_SYNTAXES)
     local params = opts.params
     if not opts.raw then
@@ -109,7 +109,7 @@ local function raw_query(query, opts)
 end
 
 local function ConnProcessQuery(conn, query, opts, async, exec_func)
-    query, opts = prepare_query(query, opts, async)
+    query, opts = prepare_query(query, opts)
     if opts.sync then
         async = false
     end

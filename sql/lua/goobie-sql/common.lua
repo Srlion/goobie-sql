@@ -85,9 +85,8 @@ local EMPTY_OPS = {
 
 ---@param query string|nil
 ---@param opts table|nil
----@param is_async boolean|nil
 ---@return table
-common.CheckQuery = function(query, opts, is_async)
+common.CheckQuery = function(query, opts)
     if type(query) ~= "string" then
         error("query must be a string", 4)
     end
@@ -107,10 +106,9 @@ common.CheckQuery = function(query, opts, is_async)
         error("params must be a table", 4)
     end
 
-    if not opts.sync then
-        if is_async and type(opts.callback) ~= "function" then
-            error("callback must be a function", 4)
-        end
+    local callback = opts.callback
+    if callback ~= nil and type(callback) ~= "function" then
+        error("callback must be a function", 4)
     end
 
     return opts

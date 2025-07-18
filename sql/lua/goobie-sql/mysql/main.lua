@@ -121,8 +121,8 @@ function Conn:PingSync()
     return err, res
 end
 
-local function prepare_query(query, opts, is_async)
-    opts = CheckQuery(query, opts, is_async)
+local function prepare_query(query, opts)
+    opts = CheckQuery(query, opts)
     query = string_gsub(query, "{([%w_]+)}", CROSS_SYNTAXES)
     local params = opts.params
     if not opts.raw then -- raw queries can't be escaped in sqlx, hopefully they expose an escape function
@@ -136,7 +136,7 @@ local function create_query_method(query_type)
     local query_func = QUERIES[query_type]
 
     Conn[query_type] = function(self, query, opts)
-        query, opts = prepare_query(query, opts, true)
+        query, opts = prepare_query(query, opts)
         if opts.trace == nil then
             opts.trace = debug.traceback("", 2)
         end
