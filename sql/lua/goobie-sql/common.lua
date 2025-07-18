@@ -79,9 +79,6 @@ end
 common.CROSS_SYNTAXES = include("goobie-sql/cross_syntaxes.lua")
 
 local EMPTY_PARAMS = {}
-local EMPTY_OPS = {
-    params = EMPTY_PARAMS,
-}
 
 ---@param query string|nil
 ---@param opts table|nil
@@ -92,7 +89,7 @@ common.CheckQuery = function(query, opts)
     end
 
     if opts == nil then
-        return EMPTY_OPS
+        return { params = EMPTY_PARAMS }
     end
 
     if type(opts) ~= "table" then
