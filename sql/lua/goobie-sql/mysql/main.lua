@@ -129,6 +129,9 @@ local function prepare_query(query, opts)
         query, params = common.HandleQueryParams(query, params)
     end
     opts.params = params
+    if opts.trace == nil then
+        opts.trace = debug.traceback("", 3)
+    end
     return query, opts
 end
 
@@ -137,9 +140,6 @@ local function create_query_method(query_type)
 
     Conn[query_type] = function(self, query, opts)
         query, opts = prepare_query(query, opts)
-        if opts.trace == nil then
-            opts.trace = debug.traceback("", 2)
-        end
         if opts.sync then
             return ConnSyncOP(self, function(cb)
                 opts.callback = cb
