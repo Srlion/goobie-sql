@@ -21,7 +21,6 @@ sqlx = { version = "0.8.6", features = [
     "rust_decimal",
     "chrono",
 ] }
-atomic_enum = "0.3.0"
 openssl-sys = { version = "0.9.109", features = ["vendored"] }
 const_format = "0.2.34"
 tokio-util = { version = "0.7.15", features = ["rt"] }

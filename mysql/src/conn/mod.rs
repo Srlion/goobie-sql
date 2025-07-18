@@ -258,7 +258,7 @@ fn fetch(l: lua::State) -> Result<i32> {
 #[lua_function]
 fn get_state(l: lua::State) -> Result<i32> {
     let conn = l.get_struct::<Conn>(1)?;
-    l.push_number(conn.state().to_usize());
+    l.push_number(conn.state() as usize);
     Ok(1)
 }
 
