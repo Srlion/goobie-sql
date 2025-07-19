@@ -17,8 +17,15 @@ function goobie_sql.NewConn(opts, on_connected)
         return error("opts must be a table")
     end
 
+    local driver = opts.driver
+    if type(driver) == "string" then
+        driver = string.lower(driver)
+    else
+        driver = "sqlite"
+    end
+
     local conn
-    if opts.driver == "mysql" then
+    if driver == "mysql" then
         if goobie_mysql == nil then
             goobie_mysql = include("goobie-sql/mysql/main.lua")
             if not goobie_mysql then
@@ -26,13 +33,11 @@ function goobie_sql.NewConn(opts, on_connected)
             end
         end
         conn = goobie_mysql.NewConn(opts)
-    elseif opts.driver == "sqlite" then
+    else
         if goobie_sqlite == nil then
             goobie_sqlite = include("goobie-sql/sqlite/main.lua")
         end
         conn = goobie_sqlite.NewConn(opts)
-    else
-        return error("invalid driver '%s'", opts.driver)
     end
 
     conn.options = opts
