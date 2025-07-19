@@ -93,6 +93,8 @@ function Conn:IsMySQL() return true end
 
 function Conn:IsSQLite() return false end
 
+function Conn:Driver() return "MySQL" end
+
 function Conn:StartSync()
     local err = ConnSyncOP(self, function(cb)
         self:Start(cb)

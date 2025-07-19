@@ -26,6 +26,8 @@ function Conn:IsMySQL() return false end
 
 function Conn:IsSQLite() return true end
 
+function Conn:Driver() return "SQLite" end
+
 function Conn:State() return common.GetPrivate(self, "state") end
 
 -- we delay async start in sqlite to be close as possible to mysql behaviour
