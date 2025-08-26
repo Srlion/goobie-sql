@@ -7,7 +7,7 @@ mod query;
 mod runtime;
 
 pub use constants::*;
-pub use runtime::run_async;
+pub use runtime::{run_async, spawn_untracked};
 
 #[gmod13_open]
 fn gmod13_open(l: lua::State) -> i32 {

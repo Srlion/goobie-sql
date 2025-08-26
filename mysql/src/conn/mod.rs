@@ -21,7 +21,10 @@ pub mod state;
 use options::Options as ConnectOptions;
 use state::{AtomicState, State};
 
-use crate::{cstr_from_args, run_async, GLOBAL_TABLE_NAME, GLOBAL_TABLE_NAME_C};
+use crate::{
+    cstr_from_args, run_async, spawn_untracked, GLOBAL_TABLE_NAME, GLOBAL_TABLE_NAME_C,
+    WAIT_TIMEOUT,
+};
 
 const META_TABLE_NAME: LuaCStr = cstr_from_args!(GLOBAL_TABLE_NAME, "_connection");
 
@@ -96,7 +99,23 @@ impl Conn {
             }
         });
 
+        conn.spawn_ping_heartbeat();
+
         conn
+    }
+
+    #[inline]
+    fn spawn_ping_heartbeat(&self) {
+        let sender = self.sender.clone();
+        spawn_untracked(async move {
+            loop {
+                // Try to send; if the receiver closed, exit.
+                if sender.send(ConnMessage::Ping(LUA_NOREF)).is_err() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_secs((WAIT_TIMEOUT / 2).into())).await;
+            }
+        });
     }
 
     #[inline]

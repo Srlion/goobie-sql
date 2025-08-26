@@ -37,3 +37,7 @@ pub const GLOBAL_TABLE_NAME_C: LuaCStr = cstr_from_args!(GLOBAL_TABLE_NAME);
 pub const DEFAULT_WORKER_THREADS: u16 = 1;
 
 pub const DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT: u32 = 20;
+
+// this is the timeout that is set for each connection session
+// we ping every WAIT_TIMEOUT/2 to keep the connection alive, because gmod servers could just be dead for some nice time
+pub const WAIT_TIMEOUT: u32 = 7200;

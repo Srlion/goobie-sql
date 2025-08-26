@@ -83,6 +83,14 @@ where
     read().spawn(read_tracker().track_future(fut))
 }
 
+pub fn spawn_untracked<F>(fut: F) -> tokio::task::JoinHandle<F::Output>
+where
+    F: std::future::Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    read().spawn(fut)
+}
+
 fn get_max_worker_threads(l: lua::State) -> u16 {
     let mut max_worker_threads = DEFAULT_WORKER_THREADS;
 

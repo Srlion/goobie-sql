@@ -7,7 +7,7 @@ use gmod::lua::*;
 use sqlx::{mysql::MySqlConnection, Connection};
 
 use super::{state::State, ConnMeta};
-use crate::error::handle_error;
+use crate::{error::handle_error, WAIT_TIMEOUT};
 
 #[inline(always)]
 pub async fn connect(
@@ -24,7 +24,12 @@ pub async fn connect(
     meta.set_state(State::Connecting);
 
     let res = match MySqlConnection::connect_with(&meta.opts.inner).await {
-        Ok(new_conn) => {
+        Ok(mut new_conn) => {
+            sqlx::query(&format!("SET SESSION wait_timeout = {}", WAIT_TIMEOUT))
+                .execute(&mut new_conn)
+                .await
+                .ok(); // ignore error
+
             *conn = Some(new_conn);
             meta.id.fetch_add(1, Ordering::Release); // increment the id
             meta.set_state(State::Connected);
