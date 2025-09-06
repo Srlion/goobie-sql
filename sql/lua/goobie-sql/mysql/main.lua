@@ -218,8 +218,12 @@ do
             if no_escape_columns and table_HasValue(no_escape_columns, column) then
                 table_insert(values, common.HandleNoEscape(value))
             else
-                table_insert(values, "?")
-                table_insert(params, value)
+                if value == common.NULL then
+                    table_insert(values, "NULL")
+                else
+                    table_insert(values, "?")
+                    table_insert(params, value)
+                end
             end
         end
         query_count = query_count - 1 -- remove last comma
