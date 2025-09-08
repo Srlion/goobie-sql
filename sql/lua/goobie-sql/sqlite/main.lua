@@ -1,3 +1,6 @@
+-- Enable foreign key constraints because they are not enabled by default
+sql.Query("PRAGMA foreign_keys = ON;")
+
 local common = include("goobie-sql/common.lua")
 local ConnBeginSync = include("goobie-sql/sqlite/txn.lua")
 
