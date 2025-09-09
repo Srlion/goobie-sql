@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gmod = { git = "https://github.com/Srlion/gmod-rs.git", rev = "2d7803a" }
-tokio = { version = "1.45.1", default-features = false, features = [
+tokio = { version = "1.47.1", default-features = false, features = [
     "rt-multi-thread",
     "macros",
 ] }
@@ -23,7 +23,7 @@ sqlx = { version = "0.8.6", features = [
 ] }
 openssl-sys = { version = "0.9.109", features = ["vendored"] }
 const_format = "0.2.34"
-tokio-util = { version = "0.7.15", features = ["rt"] }
+tokio-util = { version = "0.7.16", features = ["rt"] }
 
 [profile.release]
 opt-level = 3
