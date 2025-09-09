@@ -143,10 +143,14 @@ local function create_query_method(query_type)
     Conn[query_type] = function(self, query, opts)
         query, opts = prepare_query(query, opts)
         if opts.sync then
-            return ConnSyncOP(self, function(cb)
+            local callback = opts.callback
+            local err, res = ConnSyncOP(self, function(cb)
                 opts.callback = cb
                 ConnQueueTask(self, query_func, query, opts)
             end)
+            if callback then
+                return callback(err, res)
+            end
         else
             ConnQueueTask(self, query_func, query, opts)
         end

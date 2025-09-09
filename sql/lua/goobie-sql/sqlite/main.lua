@@ -115,9 +115,6 @@ end
 
 local function ConnProcessQuery(conn, query, opts, async, exec_func)
     query, opts = prepare_query(query, opts)
-    if opts.sync then
-        async = false
-    end
     local err, res = exec_func(query, opts)
     if err then
         local on_error = conn.on_error

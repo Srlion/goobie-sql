@@ -47,8 +47,6 @@ function Txn:FetchOne(query, opts)
     if not self:IsOpen() then
         return error("transaction is closed")
     end
-    opts = opts or {}
-    opts.sync = true
     return self.conn:FetchOneSync(query, opts)
 end
 
