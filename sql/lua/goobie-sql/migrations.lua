@@ -141,12 +141,14 @@ local function RunMigrations(conn, migrations, ...)
         else
             success = ProtectedCall(process, migration.UP)
         end
+
+        applied_migrations[idx] = migration
+
         if not success then
             revert_migrations(...)
             return error("failed to apply migration: " .. idx)
         end
 
-        applied_migrations[idx] = migration
         current_version = idx
         ::_continue_::
     end
