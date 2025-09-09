@@ -48,7 +48,7 @@ pub async fn connect(
         };
     }
 
-    meta.task_queue.add(move |l| {
+    meta.task_queue.queue(move |l| {
         match res {
             Ok(_) => {
                 l.pcall_ignore_func_ref(callback, || 0);

@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Result;
-use gmod::{lua::*, rstruct::RStruct, task_queue::TaskQueue, *};
+use gmod::{lua::*, rstruct::RStruct, NextTickQueue, *};
 use sqlx::mysql::MySqlConnection;
 use tokio::sync::mpsc;
 
@@ -45,7 +45,7 @@ pub struct ConnMeta {
     id: AtomicUsize,
     state: AtomicState,
     opts: ConnectOptions,
-    task_queue: TaskQueue,
+    task_queue: NextTickQueue,
 }
 
 impl ConnMeta {
@@ -68,7 +68,7 @@ impl Conn {
                 id: AtomicUsize::new(0),
                 state: AtomicState::new(State::NotConnected),
                 opts,
-                task_queue: TaskQueue::new(l),
+                task_queue: NextTickQueue::new(l),
             }),
             sender,
         };
@@ -130,7 +130,7 @@ impl Conn {
 
     #[inline]
     fn poll(&self, l: lua::State) {
-        self.meta.task_queue.poll(l);
+        self.meta.task_queue.flush(l);
     }
 }
 

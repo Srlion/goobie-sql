@@ -15,7 +15,7 @@ pub async fn ping(
     let conn = match conn {
         Some(conn) => conn,
         None => {
-            meta.task_queue.add(move |l| {
+            meta.task_queue.queue(move |l| {
                 l.pcall_ignore_func_ref(callback, || {
                     handle_error(&l, &anyhow::anyhow!("connection is not open"));
                     0
@@ -27,7 +27,7 @@ pub async fn ping(
     let start = tokio::time::Instant::now();
     let res = conn.ping().await;
     let latency = start.elapsed().as_micros() as f64;
-    meta.task_queue.add(move |l| {
+    meta.task_queue.queue(move |l| {
         match res {
             Ok(_) => {
                 l.pcall_ignore_func_ref(callback, || {

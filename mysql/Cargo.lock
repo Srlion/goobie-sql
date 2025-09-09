@@ -601,7 +601,7 @@ checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 [[package]]
 name = "gmod"
 version = "17.0.0"
-source = "git+https://github.com/Srlion/gmod-rs.git?rev=b0ca2f1#b0ca2f139634e468bfb1fbb387c0b39e15a62142"
+source = "git+https://github.com/Srlion/gmod-rs.git?rev=2d7803a#2d7803ade9c2438155c58d578dca51aef4172228"
 dependencies = [
  "anyhow",
  "defer",
@@ -614,7 +614,7 @@ dependencies = [
 [[package]]
 name = "gmod-macros"
 version = "2.0.1"
-source = "git+https://github.com/Srlion/gmod-rs.git?rev=b0ca2f1#b0ca2f139634e468bfb1fbb387c0b39e15a62142"
+source = "git+https://github.com/Srlion/gmod-rs.git?rev=2d7803a#2d7803ade9c2438155c58d578dca51aef4172228"
 dependencies = [
  "proc-macro2",
  "quote",

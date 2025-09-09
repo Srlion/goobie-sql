@@ -63,7 +63,7 @@ pub async fn query(
     let db_conn = match conn {
         Some(conn) => conn,
         None => {
-            meta.task_queue.add(move |l| {
+            meta.task_queue.queue(move |l| {
                 l.pcall_ignore_func_ref(query.callback, || {
                     handle_error(&l, &anyhow::anyhow!("connection is not open"));
                     0
@@ -100,7 +100,7 @@ pub async fn query(
 
     // if we should reconnect, we need to let lua know that there is an error so it can handle it
     meta.task_queue
-        .add(move |l| query.process_result(l));
+        .queue(move |l| query.process_result(l));
 
     if !should_reconnect {
         return;

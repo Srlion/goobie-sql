@@ -8,7 +8,7 @@ name = "gmsv_goobie_mysql"
 crate-type = ["cdylib"]
 
 [dependencies]
-gmod = { git = "https://github.com/Srlion/gmod-rs.git", rev = "b0ca2f1" }
+gmod = { git = "https://github.com/Srlion/gmod-rs.git", rev = "2d7803a" }
 tokio = { version = "1.45.1", default-features = false, features = [
     "rt-multi-thread",
     "macros",
