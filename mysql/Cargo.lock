@@ -665,9 +665,9 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "gmodx"
-version = "0.10.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "445fcfe9535f0904f85d704160ac49e7c25879a7e411defe9400a2a6a5420e7d"
+checksum = "50cd31015ad51afe645195fc0dee588066b467af2639f44e2771bfa6a9ad8c2a"
 dependencies = [
  "bindgen",
  "bstr",
@@ -695,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "goobie-mysql"
-version = "1.1.0"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "const_format",

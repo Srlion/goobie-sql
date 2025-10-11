@@ -26,7 +26,7 @@ fn gmod13_open(state: lua::State) {
     tokio_tasks::on_event(|event| {
         use gmodx::tokio_tasks::RuntimeEvent;
         match event {
-            RuntimeEvent::Starting { thread_count } => {
+            RuntimeEvent::Started { thread_count } => {
                 print_goobie!("Using {thread_count} async threads! (GMODX_ASYNC_THREADS)");
             }
             RuntimeEvent::ShuttingDown {
