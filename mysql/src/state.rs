@@ -3,9 +3,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use gmod::lua;
-
-use crate::GLOBAL_TABLE_NAME_C;
+use gmodx::lua::{self, Table};
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 #[repr(usize)]
@@ -61,27 +59,22 @@ impl AtomicState {
         AtomicState(AtomicUsize::new(v as usize))
     }
 
-    pub fn store(&self, val: State, order: Ordering) {
-        self.0.store(val as usize, order)
+    pub fn set(&self, val: State) {
+        self.0.store(val as usize, Ordering::Release)
     }
 
-    pub fn load(&self, order: Ordering) -> State {
-        State::try_from(self.0.load(order))
+    pub fn get(&self) -> State {
+        State::try_from(self.0.load(Ordering::Acquire))
             .unwrap_or_else(|e| panic!("AtomicState corruption: {}", e))
     }
 }
 
-pub fn setup(l: lua::State) {
-    l.get_global(GLOBAL_TABLE_NAME_C);
-    {
-        l.new_table();
-        {
-            for (state, lua_name) in State::ALL.iter().zip(State::LUA_NAMES.iter()) {
-                l.push_number(*state as usize);
-                l.set_field(-2, lua_name);
-            }
-        }
-        l.set_field(-2, c"STATES");
+pub fn on_gmod_open(state: &lua::State, goobie_mysql: &Table) {
+    let conn_states = state.create_table();
+
+    for (conn_state, lua_name) in State::ALL.iter().zip(State::LUA_NAMES.iter()) {
+        conn_states.raw_set(state, *lua_name, *conn_state as usize);
     }
-    l.pop();
+
+    goobie_mysql.raw_set(state, "STATES", conn_states);
 }

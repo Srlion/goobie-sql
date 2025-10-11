@@ -1,63 +1,53 @@
-use gmod::*;
+use gmodx::{gmod13_close, gmod13_open, lua, tokio_tasks};
 
-mod conn;
-mod constants;
+mod config;
+mod connection;
 mod error;
+mod macros;
 mod query;
-mod runtime;
+mod state;
 
-pub use constants::*;
-pub use runtime::{run_async, spawn_untracked};
+pub use config::*;
 
 #[gmod13_open]
-fn gmod13_open(l: lua::State) -> i32 {
-    runtime::load(l);
+fn gmod13_open(state: lua::State) {
+    let goobie_mysql = state.create_table();
 
-    l.new_table();
-    {
-        l.push_string(crate::VERSION);
-        l.set_field(-2, c"VERSION");
+    goobie_mysql.raw_set(&state, "VERSION", VERSION);
+    goobie_mysql.raw_set(&state, "MAJOR_VERSION", MAJOR_VERSION);
 
-        l.push_string(crate::MAJOR_VERSION);
-        l.set_field(-2, c"MAJOR_VERSION");
+    connection::on_gmod_open(&state, &goobie_mysql);
+    crate::state::on_gmod_open(&state, &goobie_mysql);
 
-        l.push_function(conn::new_conn);
-        l.set_field(-2, c"NewConn");
-    }
-    l.set_global(GLOBAL_TABLE_NAME_C);
+    state
+        .set_global(GOOBIE_MYSQL_TABLE_NAME, goobie_mysql)
+        .expect("Failed to set goobie_mysql table");
 
-    conn::on_gmod_open(l);
-
-    0
+    tokio_tasks::on_event(|event| {
+        use gmodx::tokio_tasks::RuntimeEvent;
+        match event {
+            RuntimeEvent::Starting { thread_count } => {
+                print_goobie!("Using {thread_count} async threads! (GMODX_ASYNC_THREADS)");
+            }
+            RuntimeEvent::ShuttingDown {
+                timeout_secs,
+                pending_tasks,
+            } => {
+                if pending_tasks > 0 {
+                    print_goobie!(
+                        "Waiting up to {timeout_secs} seconds for {pending_tasks} connection(s) to complete..."
+                    );
+                }
+            }
+            RuntimeEvent::ShutdownComplete => {
+                print_goobie!("All connections have completed!");
+            }
+            RuntimeEvent::ShutdownTimeout => {
+                print_goobie!("Timed out waiting for connections to complete!");
+            }
+        }
+    });
 }
 
 #[gmod13_close]
-fn gmod13_close(l: lua::State) -> i32 {
-    runtime::unload(l);
-
-    0
-}
-
-#[macro_export]
-macro_rules! print_goobie {
-    ($($arg:tt)*) => {
-        println!("(Goobie MySQL v{}) {}", $crate::VERSION, format_args!($($arg)*));
-    };
-}
-
-#[macro_export]
-macro_rules! print_goobie_with_host {
-    ($host:expr, $($arg:tt)*) => {
-        println!("(Goobie MySQL v{}) |{}| {}", $crate::VERSION, $host, format_args!($($arg)*));
-    };
-}
-
-#[macro_export]
-macro_rules! cstr_from_args {
-    ($($arg:expr),+) => {{
-        use std::ffi::{c_char, CStr};
-        const BYTES: &[u8] = const_format::concatcp!($($arg),+, "\0").as_bytes();
-        let ptr: *const c_char = BYTES.as_ptr().cast();
-        unsafe { CStr::from_ptr(ptr) }
-    }};
-}
+fn gmod13_close(state: lua::State) {}

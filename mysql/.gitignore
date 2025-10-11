@@ -1,5 +1,3 @@
 /target
-build.bat
-buildrelease.bat
-unused
-/.vscode
+to_text.py
+yes.txt

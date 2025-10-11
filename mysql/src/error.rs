@@ -1,53 +1,50 @@
-use gmod::*;
+use gmodx::lua::{self, Table};
 use sqlx::mysql::MySqlDatabaseError;
 
-use crate::GLOBAL_TABLE_NAME_C;
+use crate::GOOBIE_MYSQL_TABLE_NAME;
 
-// call this function after creating a table
-fn handle_database_error(l: &lua::State, db_e: &MySqlDatabaseError) -> String {
-    if let Some(sqlstate) = db_e.code() {
-        l.push_string(sqlstate);
-        l.set_field(-2, c"sqlstate");
+fn write_mysql_error_fields(state: &lua::State, err: &MySqlDatabaseError, out: &Table) -> String {
+    if let Some(sqlstate) = err.code() {
+        out.raw_set(state, "sqlstate", sqlstate);
     }
-
-    l.push_number(db_e.number());
-    l.set_field(-2, c"code");
-
-    db_e.message().to_string()
+    out.raw_set(state, "code", err.number());
+    err.message().to_string()
 }
 
-// call this function after creating a table
-fn handle_sqlx_error_internal(l: &lua::State, e: &sqlx::Error) {
-    let msg = match e {
-        sqlx::Error::Database(ref db_e) => match db_e.try_downcast_ref::<MySqlDatabaseError>() {
-            Some(mysql_e) => handle_database_error(l, mysql_e),
-            _ => e.to_string(),
+fn write_sqlx_error(state: &lua::State, err: &sqlx::Error, out: &Table) {
+    let msg = match err {
+        sqlx::Error::Database(db_e) => match db_e.try_downcast_ref::<MySqlDatabaseError>() {
+            Some(mysql_e) => write_mysql_error_fields(state, mysql_e, out),
+            _ => err.to_string(),
         },
-        _ => e.to_string(),
+        _ => err.to_string(),
     };
 
-    l.push_string(&msg);
-    l.set_field(-2, c"message");
+    out.raw_set(state, "message", &msg);
 }
 
-pub fn handle_error(l: &lua::State, e: &anyhow::Error) {
-    l.create_table(0, 3);
+fn apply_error_metatable(state: &lua::State, tbl: &Table) {
+    let goobie_mysql: Table = state
+        .get_global(GOOBIE_MYSQL_TABLE_NAME)
+        .unwrap_or_else(|_| panic!("Failed to get global '{GOOBIE_MYSQL_TABLE_NAME}'"));
 
-    l.get_global(GLOBAL_TABLE_NAME_C);
-    if l.is_table(-1) {
-        l.get_field(-1, c"ERROR_META");
-        l.set_metatable(-3);
+    if let Some(meta) = goobie_mysql
+        .get::<Option<Table>>(state, "ERROR_META")
+        .expect("ERROR_META is supposed to be a table")
+    {
+        tbl.set_metatable(state, Some(meta));
     }
-    l.pop();
+}
 
-    match e.downcast_ref::<sqlx::Error>() {
-        Some(sqlx_e) => {
-            handle_sqlx_error_internal(l, sqlx_e);
-        }
-        _ => {
-            let err_msg = e.to_string();
-            l.push_string(&err_msg);
-            l.set_field(-2, c"message");
-        }
-    };
+pub fn to_error_table(state: &lua::State, err: &anyhow::Error) -> Table {
+    let out = state.create_table_with_capacity(0, 3);
+
+    if let Some(sqlx_err) = err.downcast_ref::<sqlx::Error>() {
+        write_sqlx_error(state, sqlx_err, &out);
+    } else {
+        out.raw_set(state, "message", err.to_string());
+    }
+
+    apply_error_metatable(state, &out);
+    out
 }
