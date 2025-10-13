@@ -8,6 +8,29 @@ use crate::{
 
 use super::types::ConnMeta;
 
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_ATTEMPTS: u32 = 3;
+const RETRY_DELAY: Duration = Duration::from_secs(2);
+
+async fn connect_with_retry(
+    opts: &sqlx::mysql::MySqlConnectOptions,
+) -> Result<MySqlConnection, sqlx::Error> {
+    let mut last_err = None;
+    for _ in 1..=MAX_ATTEMPTS {
+        match tokio::time::timeout(CONNECT_TIMEOUT, MySqlConnection::connect_with(opts)).await {
+            Ok(Ok(conn)) => return Ok(conn),
+            Ok(Err(e)) => {
+                last_err = Some(e);
+            }
+            Err(_) => {
+                last_err = Some(sqlx::Error::PoolTimedOut);
+            }
+        }
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+    Err(last_err.unwrap())
+}
+
 pub async fn connect(
     db_conn: &mut Option<MySqlConnection>,
     meta: &ConnMeta,
@@ -21,7 +44,7 @@ pub async fn connect(
 
     meta.state.set(State::Connecting);
 
-    let res = match MySqlConnection::connect_with(&meta.opts).await {
+    let res = match connect_with_retry(&meta.opts).await {
         Ok(mut new_conn) => {
             let wait_timeout = config::WAIT_TIMEOUT;
             sqlx::query(&format!("SET SESSION wait_timeout = {}", wait_timeout))
