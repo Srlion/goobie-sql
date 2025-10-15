@@ -1,5 +1,5 @@
 use anyhow::Result;
-use gmodx::lua::{self, Function, ObjectLike as _, Table, TypedUserData, UserData, UserDataRef};
+use gmodx::lua::{self, Function, ObjectLike as _, Table, UserData, UserDataRef};
 
 use crate::query;
 
@@ -72,14 +72,13 @@ impl UserData for Conn {
 
 fn create_query_func(
     qtype: query::QueryType,
-) -> impl Fn(&lua::State, TypedUserData<Conn>, lua::String, Option<Table>) -> Result<()> {
+) -> impl Fn(&lua::State, UserDataRef<Conn>, lua::String, Option<Table>) -> Result<()> {
     move |state: &lua::State,
-          conn_ud: TypedUserData<Conn>,
+          conn: UserDataRef<Conn>,
           query: lua::String,
           opts: Option<Table>|
           -> Result<()> {
-        let conn = conn_ud.downcast::<Conn>(state).expect("check");
-        let on_error = conn_ud.get::<Option<Function>>(state, "on_error")?;
+        let on_error = conn.as_any().get::<Option<Function>>(state, "on_error")?;
         let query = query::Query::new(state, query.to_string(), qtype, on_error, opts)?;
         conn.borrow().sender.send(ConnMessage::Query(query)).ok();
         Ok(())
