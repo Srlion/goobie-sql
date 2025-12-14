@@ -131,12 +131,27 @@ function Txn:Execute(query, opts)
     return TxnQuery(self, "Execute", query, opts)
 end
 
+function Txn:Fetch(query, opts)
+    return TxnQuery(self, "Fetch", query, opts)
+end
+
 function Txn:FetchOne(query, opts)
     return TxnQuery(self, "FetchOne", query, opts)
 end
 
-function Txn:Fetch(query, opts)
-    return TxnQuery(self, "Fetch", query, opts)
+function Txn:TableExists(name)
+    if not self.open then
+        return error("transaction is closed")
+    end
+    local conn = self.conn
+    common.SetPrivate(conn, "locked", false)
+    local exists, err = conn:TableExists(name)
+    common.SetPrivate(conn, "locked", true)
+    return exists, err
+end
+
+function Txn:UpsertQuery(tbl_name, opts)
+    return TxnQuery(self, "UpsertQuery", tbl_name, opts)
 end
 
 function Txn:Commit()

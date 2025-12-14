@@ -14,10 +14,6 @@ end
 
 function Txn:IsOpen() return self.open end
 
-function Txn:PingSync()
-    return self.conn:PingSync()
-end
-
 function Txn:Ping(callback)
     return self.conn:Ping(callback)
 end
