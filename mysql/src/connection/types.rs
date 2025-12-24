@@ -9,10 +9,11 @@ use tokio::sync::mpsc;
 use gmodx::{
     NextTickQueue,
     lua::{self, Function, Table},
+    tokio_tasks::spawn_untracked,
 };
 
 use crate::{
-    query,
+    WAIT_TIMEOUT, query,
     state::{AtomicState, State},
 };
 
@@ -63,6 +64,8 @@ impl Conn {
             handler::handle_messages(receiver, meta).await;
         });
 
+        conn.spawn_ping_heartbeat();
+
         Ok(conn)
     }
 
@@ -79,6 +82,19 @@ impl Conn {
     #[inline]
     pub fn poll(&self, state: &lua::State) {
         self.meta.task_queue.flush(state);
+    }
+
+    fn spawn_ping_heartbeat(&self) {
+        let sender = self.sender.clone();
+        spawn_untracked(async move {
+            loop {
+                // Try to send; if the receiver closed, exit.
+                if sender.send(ConnMessage::Ping(None)).is_err() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_secs((WAIT_TIMEOUT / 2).into())).await;
+            }
+        });
     }
 }
 
