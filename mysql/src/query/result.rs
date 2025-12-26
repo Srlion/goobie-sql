@@ -38,12 +38,13 @@ pub enum Value {
     U32(u32),
     U64(u64),
     String(lua::String),
+    Decimal(Decimal),
 }
 
 impl ToLua for &Value {
     fn push_to_stack(self, state: &lua::State) {
         match self {
-            Value::Nil => ().push_to_stack(state),
+            Value::Nil => lua::Nil.push_to_stack(state),
             Value::Bool(b) => b.push_to_stack(state),
             Value::I8(i) => i.push_to_stack(state),
             Value::I16(i) => i.push_to_stack(state),
@@ -56,6 +57,7 @@ impl ToLua for &Value {
             Value::U32(u) => u.push_to_stack(state),
             Value::U64(u) => u.push_to_stack(state),
             Value::String(s) => s.push_to_stack(state),
+            Value::Decimal(d) => d.push_to_stack(state),
         }
     }
 }
@@ -104,10 +106,7 @@ fn extract_column_value(row: &MySqlRow, column_name: &str, column_type: &str) ->
         "BIGINT UNSIGNED" => Value::U64(row.get(column_name)),
         "FLOAT" => Value::F32(row.get(column_name)),
         "DOUBLE" | "REAL" => Value::F64(row.get(column_name)),
-        "DECIMAL" => {
-            let decimal: Decimal = row.get(column_name);
-            Value::String(decimal.to_string().into())
-        }
+        "DECIMAL" => Value::Decimal(row.get(column_name)),
         "TIME" => {
             let time: NaiveTime = row.get(column_name);
             Value::String(time.to_string().into())

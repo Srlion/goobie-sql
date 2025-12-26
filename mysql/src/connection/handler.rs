@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use gmodx::lua::Nil;
 use sqlx::Connection;
 use sqlx::mysql::MySqlConnection;
 use std::sync::Arc;
@@ -29,7 +30,7 @@ pub async fn handle_messages(
                 reconnect::query(&mut db_conn, &meta, query).await;
             }
             ConnMessage::Ping(callback) => {
-                ping(&mut db_conn, &meta, callback).await;
+                ping(&mut db_conn, callback).await;
             }
             // This should be called after "disconnect"
             ConnMessage::Close => {
@@ -55,7 +56,7 @@ async fn disconnect(
         return;
     };
 
-    meta.task_queue.queue(move |state: &gmodx::lua::State| {
+    gmodx::next_tick(move |state: &gmodx::lua::State| {
         match res {
             Ok(()) => callback.call_logged::<()>(state, ()).ok(),
             Err(e) => callback
@@ -65,16 +66,12 @@ async fn disconnect(
     });
 }
 
-async fn ping(
-    db_conn: &mut Option<MySqlConnection>,
-    meta: &ConnMeta,
-    callback: Option<gmodx::lua::Function>,
-) {
+async fn ping(db_conn: &mut Option<MySqlConnection>, callback: Option<gmodx::lua::Function>) {
     let db_conn = match db_conn {
         Some(conn) => conn,
         None => {
             if let Some(callback) = callback {
-                meta.task_queue.queue(move |state| {
+                gmodx::next_tick(move |state| {
                     callback
                         .call_logged::<()>(
                             state,
@@ -95,9 +92,9 @@ async fn ping(
         return;
     };
 
-    meta.task_queue.queue(move |state: &gmodx::lua::State| {
+    gmodx::next_tick(move |state: &gmodx::lua::State| {
         match res {
-            Ok(()) => callback.call_logged::<()>(state, ((), latency)).ok(),
+            Ok(()) => callback.call_logged::<()>(state, (Nil, latency)).ok(),
             Err(e) => callback
                 .call_logged(state, crate::error::to_error_table(state, &e.into()))
                 .ok(),

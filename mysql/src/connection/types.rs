@@ -7,7 +7,6 @@ use std::sync::{
 use tokio::sync::mpsc;
 
 use gmodx::{
-    NextTickQueue,
     lua::{self, Function, Table},
     tokio_tasks::spawn_untracked,
 };
@@ -36,7 +35,6 @@ pub struct ConnMeta {
     pub id: AtomicUsize,
     pub state: AtomicState,
     pub opts: MySqlConnectOptions,
-    pub task_queue: NextTickQueue,
 }
 
 pub struct Conn {
@@ -54,7 +52,6 @@ impl Conn {
                 id: AtomicUsize::new(0),
                 state: AtomicState::new(State::NotConnected),
                 opts,
-                task_queue: NextTickQueue::new(state),
             }),
             sender,
         };
@@ -81,7 +78,7 @@ impl Conn {
 
     #[inline]
     pub fn poll(&self, state: &lua::State) {
-        self.meta.task_queue.flush(state);
+        gmodx::flush_next_tick(state);
     }
 
     fn spawn_ping_heartbeat(&self) {

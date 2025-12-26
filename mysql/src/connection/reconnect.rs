@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use gmodx::lua::Nil;
 use sqlx::{Connection, mysql::MySqlConnection};
 use std::{sync::atomic::Ordering, time::Duration};
 
@@ -66,7 +67,7 @@ pub async fn connect(
     let success = res.is_ok();
 
     if let Some(callback) = callback {
-        meta.task_queue.queue(move |state: &gmodx::lua::State| {
+        gmodx::next_tick(move |state: &gmodx::lua::State| {
             match res {
                 Ok(()) => callback.call_logged::<()>(state, ()).ok(),
                 Err(e) => callback
@@ -122,7 +123,7 @@ pub async fn query(
         Some(conn) => conn,
         None => {
             if let Some(callback) = query.callback {
-                meta.task_queue.queue(move |state| {
+                gmodx::next_tick(move |state| {
                     callback
                         .call_logged::<()>(
                             state,
@@ -159,15 +160,15 @@ pub async fn query(
         false
     };
 
-    handle_query_result(meta, query);
+    handle_query_result(query);
 
     if should_reconnect {
         attempt_reconnect(conn, meta).await;
     }
 }
 
-fn handle_query_result(meta: &ConnMeta, query: crate::query::Query) {
-    meta.task_queue.queue(move |state| match &query.result {
+fn handle_query_result(query: crate::query::Query) {
+    gmodx::next_tick(move |state| match &query.result {
         Ok(query_result) => {
             let Some(callback) = query.callback else {
                 return;
@@ -181,7 +182,7 @@ fn handle_query_result(meta: &ConnMeta, query: crate::query::Query) {
                     let info_table = state.create_table_with_capacity(0, 2);
                     info_table.raw_set(state, "rows_affected", info.rows_affected());
                     info_table.raw_set(state, "last_insert_id", info.last_insert_id());
-                    callback.call_logged::<()>(state, ((), info_table)).ok();
+                    callback.call_logged::<()>(state, (Nil, info_table)).ok();
                 }
                 Rows(rows) => {
                     let rows = match rows {
@@ -202,7 +203,7 @@ fn handle_query_result(meta: &ConnMeta, query: crate::query::Query) {
                         }
                         rows_table.raw_set(state, idx as i32 + 1, &row_table);
                     }
-                    callback.call_logged::<()>(state, ((), rows_table)).ok();
+                    callback.call_logged::<()>(state, (Nil, rows_table)).ok();
                 }
                 Row(row) => {
                     let row = match row {
@@ -223,7 +224,7 @@ fn handle_query_result(meta: &ConnMeta, query: crate::query::Query) {
                     for column_value in row.iter() {
                         row_table.raw_set(state, &column_value.column_name, &column_value.value);
                     }
-                    callback.call_logged::<()>(state, ((), row_table)).ok();
+                    callback.call_logged::<()>(state, (Nil, row_table)).ok();
                 }
             }
         }
