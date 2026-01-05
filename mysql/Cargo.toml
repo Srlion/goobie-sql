@@ -8,7 +8,7 @@ name = "gmsv_goobie_mysql"
 crate-type = ["cdylib"]
 
 [dependencies]
-gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "4d3f856", features = [
+gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "5d1b46d", features = [
     "rust_decimal",
     "tokio",
     "send",
