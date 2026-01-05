@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use gmodx::lua::Nil;
+use gmodx::lua::{LuaResultExt, Nil};
 use sqlx::Connection;
 use sqlx::mysql::MySqlConnection;
 use std::sync::Arc;
@@ -58,10 +58,10 @@ async fn disconnect(
 
     gmodx::next_tick(move |state: &gmodx::lua::State| {
         match res {
-            Ok(()) => callback.call_logged::<()>(state, ()).ok(),
+            Ok(()) => callback.call::<()>(state, ()).log(),
             Err(e) => callback
-                .call_logged(state, crate::error::to_error_table(state, &e.into()))
-                .ok(),
+                .call(state, crate::error::to_error_table(state, &e.into()))
+                .log(),
         };
     });
 }
@@ -73,11 +73,11 @@ async fn ping(db_conn: &mut Option<MySqlConnection>, callback: Option<gmodx::lua
             if let Some(callback) = callback {
                 gmodx::next_tick(move |state| {
                     callback
-                        .call_logged::<()>(
+                        .call::<()>(
                             state,
                             crate::error::to_error_table(state, &anyhow!("connection is not open")),
                         )
-                        .ok();
+                        .log();
                 });
             }
             return;
@@ -94,10 +94,10 @@ async fn ping(db_conn: &mut Option<MySqlConnection>, callback: Option<gmodx::lua
 
     gmodx::next_tick(move |state: &gmodx::lua::State| {
         match res {
-            Ok(()) => callback.call_logged::<()>(state, (Nil, latency)).ok(),
+            Ok(()) => callback.call::<()>(state, (Nil, latency)).log(),
             Err(e) => callback
-                .call_logged(state, crate::error::to_error_table(state, &e.into()))
-                .ok(),
+                .call(state, crate::error::to_error_table(state, &e.into()))
+                .log(),
         };
     });
 }

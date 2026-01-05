@@ -8,12 +8,12 @@ name = "gmsv_goobie_mysql"
 crate-type = ["cdylib"]
 
 [dependencies]
-gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "4be789e", features = [
+gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "4d3f856", features = [
     "rust_decimal",
     "tokio",
     "send",
 ] }
-tokio = { version = "1.48.0", default-features = false, features = [
+tokio = { version = "1.49.0", default-features = false, features = [
     "rt-multi-thread",
     "macros",
 ] }
@@ -26,8 +26,8 @@ sqlx = { version = "0.8.6", features = [
     "chrono",
 ] }
 openssl-sys = { version = "0.9.111", features = ["vendored"] }
-const_format = "0.2.34"
-tokio-util = { version = "0.7.17", features = ["rt"] }
+const_format = "0.2.35"
+tokio-util = { version = "0.7.18", features = ["rt"] }
 
 [profile.release]
 opt-level = 3

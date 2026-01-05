@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use gmodx::lua::Nil;
+use gmodx::lua::{LuaResultExt, Nil};
 use sqlx::{Connection, mysql::MySqlConnection};
 use std::{sync::atomic::Ordering, time::Duration};
 
@@ -69,10 +69,8 @@ pub async fn connect(
     if let Some(callback) = callback {
         gmodx::next_tick(move |state: &gmodx::lua::State| {
             match res {
-                Ok(()) => callback.call_logged::<()>(state, ()).ok(),
-                Err(e) => callback
-                    .call_logged(state, to_error_table(state, &e.into()))
-                    .ok(),
+                Ok(()) => callback.call::<()>(state, ()).log(),
+                Err(e) => callback.call(state, to_error_table(state, &e.into())).log(),
             };
         });
     }
@@ -125,11 +123,11 @@ pub async fn query(
             if let Some(callback) = query.callback {
                 gmodx::next_tick(move |state| {
                     callback
-                        .call_logged::<()>(
+                        .call::<()>(
                             state,
                             to_error_table(state, &anyhow!("connection is not open")),
                         )
-                        .ok();
+                        .log();
                 });
             }
             return;
@@ -176,21 +174,19 @@ fn handle_query_result(query: crate::query::Query) {
             use QueryResult::*;
             match query_result {
                 Run => {
-                    callback.call_logged::<()>(state, ()).ok();
+                    callback.call::<()>(state, ()).log();
                 }
                 Execute(info) => {
                     let info_table = state.create_table_with_capacity(0, 2);
                     info_table.raw_set(state, "rows_affected", info.rows_affected());
                     info_table.raw_set(state, "last_insert_id", info.last_insert_id());
-                    callback.call_logged::<()>(state, (Nil, info_table)).ok();
+                    callback.call::<()>(state, (Nil, info_table)).log();
                 }
                 Rows(rows) => {
                     let rows = match rows {
                         Ok(rows) => rows,
                         Err(err) => {
-                            callback
-                                .call_logged::<()>(state, to_error_table(state, err))
-                                .ok();
+                            callback.call::<()>(state, to_error_table(state, err)).log();
                             return;
                         }
                     };
@@ -203,19 +199,17 @@ fn handle_query_result(query: crate::query::Query) {
                         }
                         rows_table.raw_set(state, idx as i32 + 1, &row_table);
                     }
-                    callback.call_logged::<()>(state, (Nil, rows_table)).ok();
+                    callback.call::<()>(state, (Nil, rows_table)).log();
                 }
                 Row(row) => {
                     let row = match row {
                         Ok(Some(row)) => row,
                         Ok(None) => {
-                            callback.call_logged::<()>(state, ()).ok();
+                            callback.call::<()>(state, ()).log();
                             return;
                         }
                         Err(err) => {
-                            callback
-                                .call_logged::<()>(state, to_error_table(state, err))
-                                .ok();
+                            callback.call::<()>(state, to_error_table(state, err)).log();
                             return;
                         }
                     };
@@ -224,21 +218,19 @@ fn handle_query_result(query: crate::query::Query) {
                     for column_value in row.iter() {
                         row_table.raw_set(state, &column_value.column_name, &column_value.value);
                     }
-                    callback.call_logged::<()>(state, (Nil, row_table)).ok();
+                    callback.call::<()>(state, (Nil, row_table)).log();
                 }
             }
         }
         Err(err) => {
             if let Some(on_error) = query.on_error {
                 on_error
-                    .call_logged::<()>(state, (to_error_table(state, err), query.trace))
-                    .ok();
+                    .call::<()>(state, (to_error_table(state, err), query.trace))
+                    .log();
             }
 
             if let Some(callback) = query.callback {
-                callback
-                    .call_logged::<()>(state, to_error_table(state, err))
-                    .ok();
+                callback.call::<()>(state, to_error_table(state, err)).log();
             }
         }
     });

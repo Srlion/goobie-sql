@@ -32,7 +32,7 @@ fn apply_error_metatable(state: &lua::State, tbl: &Table) {
         .get::<Option<Table>>(state, "ERROR_META")
         .expect("ERROR_META is supposed to be a table")
     {
-        tbl.set_metatable(state, Some(meta));
+        tbl.set_metatable(state, Some(&meta));
     }
 }
 
