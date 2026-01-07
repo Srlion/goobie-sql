@@ -19,12 +19,12 @@ local STATES = {
 }
 common.STATES = STATES
 
-local STATES_NAMES = {}; do
+local STATE_NAMES = {}; do
     for k, v in pairs(STATES) do
-        STATES_NAMES[v] = k
+        STATE_NAMES[v] = k
     end
 end
-common.STATES_NAMES = STATES_NAMES
+common.STATE_NAMES = STATE_NAMES
 
 do
     local hex = function(c)
@@ -113,7 +113,7 @@ end
 
 local COMMON_META = {}
 
-function COMMON_META:StateName() return STATES_NAMES[self:State()] end
+function COMMON_META:StateName() return STATE_NAMES[self:State()] end
 
 function COMMON_META:IsConnected() return self:State() == STATES.CONNECTED end
 

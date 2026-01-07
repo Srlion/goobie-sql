@@ -4,6 +4,7 @@ local RunMigrations = include("goobie-sql/migrations.lua")
 local goobie_sql = {
     NULL = common.NULL,
     STATES = common.STATES,
+    STATE_NAMES = common.STATE_NAMES,
 
     VERSION = common.VERSION,
     MAJOR_VERSION = common.MAJOR_VERSION,
