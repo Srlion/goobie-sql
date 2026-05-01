@@ -4,29 +4,29 @@ version = "4.1.0"
 edition = "2024"
 
 [lib]
-name = "gmsv_goobie_mysql"
 crate-type = ["cdylib"]
+name = "gmsv_goobie_mysql"
 
 [dependencies]
-gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "5d1b46d", features = [
-    "rust_decimal",
-    "tokio",
-    "send",
-] }
-tokio = { version = "1.49.0", default-features = false, features = [
-    "rt-multi-thread",
-    "macros",
-] }
 anyhow = "1.0.100"
-sqlx = { version = "0.8.6", features = [
-    "runtime-tokio",
-    "tls-native-tls",
-    "mysql",
-    "rust_decimal",
-    "chrono",
+const_format = "0.2.35"
+gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "5d1b46d", features = [
+  "rust_decimal",
+  "send",
+  "tokio",
 ] }
 openssl-sys = { version = "0.9.111", features = ["vendored"] }
-const_format = "0.2.35"
+sqlx = { version = "0.8.6", features = [
+  "chrono",
+  "mysql",
+  "runtime-tokio",
+  "rust_decimal",
+  "tls-native-tls",
+] }
+tokio = { version = "1.49.0", default-features = false, features = [
+  "macros",
+  "rt-multi-thread",
+] }
 tokio-util = { version = "0.7.18", features = ["rt"] }
 
 [profile.release]
