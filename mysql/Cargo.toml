@@ -10,7 +10,7 @@ name = "gmsv_goobie_mysql"
 [dependencies]
 anyhow = "1.0.100"
 const_format = "0.2.35"
-gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "5d1b46d", features = [
+gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "34f9f20", features = [
   "rust_decimal",
   "send",
   "tokio",

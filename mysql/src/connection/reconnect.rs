@@ -70,7 +70,9 @@ pub async fn connect(
         gmodx::next_tick(move |state: &gmodx::lua::State| {
             match res {
                 Ok(()) => callback.call::<()>(state, ()).log(),
-                Err(e) => callback.call(state, to_error_table(state, &e.into())).log(),
+                Err(e) => callback
+                    .call::<()>(state, to_error_table(state, &e.into()))
+                    .log(),
             };
         });
     }

@@ -60,7 +60,7 @@ async fn disconnect(
         match res {
             Ok(()) => callback.call::<()>(state, ()).log(),
             Err(e) => callback
-                .call(state, crate::error::to_error_table(state, &e.into()))
+                .call::<()>(state, crate::error::to_error_table(state, &e.into()))
                 .log(),
         };
     });
@@ -96,7 +96,7 @@ async fn ping(db_conn: &mut Option<MySqlConnection>, callback: Option<gmodx::lua
         match res {
             Ok(()) => callback.call::<()>(state, (Nil, latency)).log(),
             Err(e) => callback
-                .call(state, crate::error::to_error_table(state, &e.into()))
+                .call::<()>(state, crate::error::to_error_table(state, &e.into()))
                 .log(),
         };
     });
