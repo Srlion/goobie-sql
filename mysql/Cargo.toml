@@ -9,13 +9,13 @@ name = "gmsv_goobie_mysql"
 
 [dependencies]
 anyhow = "1.0.100"
-const_format = "0.2.35"
+const_format = "0.2.36"
 gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "34f9f20", features = [
   "rust_decimal",
   "send",
   "tokio",
 ] }
-openssl-sys = { version = "0.9.111", features = ["vendored"] }
+openssl-sys = { version = "0.9.114", features = ["vendored"] }
 sqlx = { version = "0.8.6", features = [
   "chrono",
   "mysql",
@@ -23,7 +23,7 @@ sqlx = { version = "0.8.6", features = [
   "rust_decimal",
   "tls-native-tls",
 ] }
-tokio = { version = "1.49.0", default-features = false, features = [
+tokio = { version = "1.52.1", default-features = false, features = [
   "macros",
   "rt-multi-thread",
 ] }
