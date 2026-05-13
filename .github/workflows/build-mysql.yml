@@ -1,10 +1,8 @@
 name: Build MySQL
 
 on:
-  workflow_run:
-    workflows: ["Bump Version"]
-    types:
-      - completed
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -43,18 +41,13 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: version
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get version
         id: get_version
-        shell: bash
         run: |
-          echo "version=$(cat ../version.txt)" >> $GITHUB_OUTPUT
-          echo "version_major=$(cat ../version_major.txt)" >> $GITHUB_OUTPUT
+          TAG="${{ github.event.release.tag_name }}"
+          TAG="${TAG#v}"
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "version_major=$(echo $TAG | cut -d. -f1)" >> $GITHUB_OUTPUT
 
       - name: Set up Rust
         run: rustup toolchain install stable --profile minimal
@@ -70,7 +63,7 @@ jobs:
         run: cargo install cargo-set-version
 
       - name: Bump Cargo version
-        run: cargo set-version "${{ steps.get_version.outputs.version }}.0"
+        run: cargo set-version "${{ steps.get_version.outputs.version }}"
 
       - name: Build targets
         run: |

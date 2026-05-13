@@ -160,4 +160,10 @@ local function RunMigrations(conn, migrations, ...)
     return old_version, current_version, first_run
 end
 
+local function MigrateToMySQL(conn, ...)
+    for _, table_name in ipairs({ ... }) do
+        local columns = sql.QueryTyped("SELECT * FROM `" .. table_name .. "`")
+    end
+end
+
 return RunMigrations

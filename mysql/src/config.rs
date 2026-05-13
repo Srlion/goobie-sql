@@ -12,10 +12,7 @@ const fn index_of_dot(s: &str) -> usize {
     s.len() // if no dot is found, return the length of the string
 }
 
-pub const VERSION: &str = str_index!(
-    env!("CARGO_PKG_VERSION"),
-    ..env!("CARGO_PKG_VERSION").len() - 2
-);
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const MAJOR_VERSION: &str = str_index!(
     env!("CARGO_PKG_VERSION"),
     ..index_of_dot(env!("CARGO_PKG_VERSION"))
