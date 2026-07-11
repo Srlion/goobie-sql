@@ -2,6 +2,13 @@
 
 Most changes will be documented here.
 
+## [0.2.8](https://github.com/Srlion/goobie-sql/compare/0.2.7...v0.2.8) (2026-07-11)
+
+
+### Bug Fixes
+
+* trigger build ([9317fa0](https://github.com/Srlion/goobie-sql/commit/9317fa0e48aa1ad1956f85e79428d8fb64937e6a))
+
 ## 2.0
 
 Combined goobie-sql and goobie-mysql into one library.
