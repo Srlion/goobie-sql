@@ -43,6 +43,7 @@ jobs:
 
       - name: Get version
         id: get_version
+        shell: bash
         run: |
           TAG="${{ github.event.release.tag_name }}"
           TAG="${TAG#v}"
