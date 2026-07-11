@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.16.3](https://github.com/Srlion/goobie-sql/compare/v4.16.2...v4.16.3) (2026-07-11)
+
+
+### Bug Fixes
+
+* this should probably fix it? ([2908d62](https://github.com/Srlion/goobie-sql/commit/2908d62131fd2a810cf25acd071c62ccc6254ff5))
+
 ## [4.16.2](https://github.com/Srlion/goobie-sql/compare/4.16.1...v4.16.2) (2026-07-11)
 
 
