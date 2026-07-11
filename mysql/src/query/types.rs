@@ -1,5 +1,6 @@
 use anyhow::Result;
 use gmodx::lua::{self, Function, Table};
+use sqlx::{AssertSqlSafe, SqlSafeStr, SqlStr};
 
 use super::{Param, QueryResult, parse_params};
 
@@ -13,7 +14,7 @@ pub enum QueryType {
 
 #[derive(Debug)]
 pub struct Query {
-    pub query: String,
+    pub query: SqlStr,
     pub qtype: QueryType,
     pub params: Vec<Param>,
     pub callback: Option<Function>,
@@ -32,7 +33,7 @@ impl Query {
         opts: Option<Table>,
     ) -> Result<Self> {
         let mut this = Self {
-            query,
+            query: AssertSqlSafe(query).into_sql_str(),
             qtype,
             params: Vec::new(),
             callback: None,

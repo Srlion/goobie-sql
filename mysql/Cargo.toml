@@ -16,7 +16,7 @@ gmodx = { git = "https://github.com/Srlion/gmodx-rs.git", rev = "34f9f20", featu
   "tokio",
 ] }
 openssl-sys = { version = "0.9.114", features = ["vendored"] }
-sqlx = { version = "0.8.6", features = [
+sqlx = { version = "0.9.0", features = [
   "chrono",
   "mysql",
   "runtime-tokio",

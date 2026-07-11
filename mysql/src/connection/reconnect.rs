@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use gmodx::lua::{LuaResultExt, Nil};
-use sqlx::{Connection, mysql::MySqlConnection};
+use sqlx::{AssertSqlSafe, Connection, mysql::MySqlConnection};
 use std::{sync::atomic::Ordering, time::Duration};
 
 use crate::{
@@ -48,10 +48,13 @@ pub async fn connect(
     let res = match connect_with_retry(&meta.opts).await {
         Ok(mut new_conn) => {
             let wait_timeout = config::WAIT_TIMEOUT;
-            sqlx::query(&format!("SET SESSION wait_timeout = {}", wait_timeout))
-                .execute(&mut new_conn)
-                .await
-                .ok();
+            sqlx::query(AssertSqlSafe(format!(
+                "SET SESSION wait_timeout = {}",
+                wait_timeout
+            )))
+            .execute(&mut new_conn)
+            .await
+            .ok();
 
             *db_conn = Some(new_conn);
             meta.id.fetch_add(1, Ordering::Release);

@@ -43,9 +43,9 @@ impl Query {
 
         if self.raw {
             // &str gets treated as raw query in sqlx
-            self.result = execute_query(self.query.as_str(), conn, qtype).await;
+            self.result = execute_query(self.query.clone(), conn, qtype).await;
         } else {
-            let mut query = sqlx::query(self.query.as_str());
+            let mut query = sqlx::query(self.query.clone());
 
             for param in self.params.drain(..) {
                 query = match param {
