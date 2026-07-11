@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.16.2](https://github.com/Srlion/goobie-sql/compare/4.16.1...v4.16.2) (2026-07-11)
+
+
+### Bug Fixes
+
+* trigger build ([74175c8](https://github.com/Srlion/goobie-sql/commit/74175c8318b8275e7956a5a8aa505232e426767e))
+
 ## [4.16.1](https://github.com/Srlion/goobie-sql/compare/v0.2.8...v4.16.1) (2026-07-11)
 
 
