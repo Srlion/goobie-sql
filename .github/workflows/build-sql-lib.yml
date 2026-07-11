@@ -20,8 +20,9 @@ jobs:
         id: get_version
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          TAG="${TAG#v}"
-          echo "version=$TAG" >> $GITHUB_OUTPUT
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build targets
         run: |
@@ -32,5 +33,5 @@ jobs:
         with:
           allowUpdates: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: "${{ steps.get_version.outputs.version }}"
+          tag: "${{ steps.get_version.outputs.tag }}"
           artifacts: sql/goobie-sql.lua

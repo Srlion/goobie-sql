@@ -46,9 +46,10 @@ jobs:
         shell: bash
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          TAG="${TAG#v}"
-          echo "version=$TAG" >> $GITHUB_OUTPUT
-          echo "version_major=$(echo $TAG | cut -d. -f1)" >> $GITHUB_OUTPUT
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_major=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_OUTPUT
 
       - name: Set up Rust
         run: rustup toolchain install stable --profile minimal
@@ -81,7 +82,7 @@ jobs:
         with:
           allowUpdates: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: "${{ steps.get_version.outputs.version }}"
+          tag: "${{ steps.get_version.outputs.tag }}"
           artifacts: |
             mysql/target/${{ matrix.target1 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix32 }}
             mysql/target/${{ matrix.target2 }}/release/gmsv_goobie_mysql_${{ steps.get_version.outputs.version_major }}${{ matrix.suffix64 }}
