@@ -21,5 +21,6 @@ pub const MAJOR_VERSION: &str = str_index!(
 pub const GOOBIE_MYSQL_TABLE_NAME: &str =
     formatcp!("goobie_mysql_{}", str_replace!(MAJOR_VERSION, ".", "_"));
 
-/// Session timeout in seconds. We ping every WAIT_TIMEOUT/2 to keep the connection alive.
-pub const WAIT_TIMEOUT: u32 = 7200;
+/// Keep connection alive, previously was doing wait_timeout but there
+/// are some other reasons why sometimes it wouldn't work
+pub const PING_INTERVAL: u64 = 30;

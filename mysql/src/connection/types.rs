@@ -12,7 +12,7 @@ use gmodx::{
 };
 
 use crate::{
-    WAIT_TIMEOUT, query,
+    query,
     state::{AtomicState, State},
 };
 
@@ -89,7 +89,7 @@ impl Conn {
                 if sender.send(ConnMessage::Ping(None)).is_err() {
                     break;
                 }
-                tokio::time::sleep(std::time::Duration::from_secs((WAIT_TIMEOUT / 2).into())).await;
+                tokio::time::sleep(std::time::Duration::from_secs(crate::PING_INTERVAL)).await;
             }
         });
     }

@@ -3,9 +3,7 @@ use gmodx::lua::{LuaResultExt, Nil};
 use sqlx::{Connection, mysql::MySqlConnection};
 use std::{sync::atomic::Ordering, time::Duration};
 
-use crate::{
-    config, error::to_error_table, print_goobie_with_host, query::QueryResult, state::State,
-};
+use crate::{error::to_error_table, print_goobie_with_host, query::QueryResult, state::State};
 
 use super::types::ConnMeta;
 
@@ -46,13 +44,7 @@ pub async fn connect(
     meta.state.set(State::Connecting);
 
     let res = match connect_with_retry(&meta.opts).await {
-        Ok(mut new_conn) => {
-            let wait_timeout = config::WAIT_TIMEOUT;
-            sqlx::query(&format!("SET SESSION wait_timeout = {}", wait_timeout))
-                .execute(&mut new_conn)
-                .await
-                .ok();
-
+        Ok(new_conn) => {
             *db_conn = Some(new_conn);
             meta.id.fetch_add(1, Ordering::Release);
             meta.state.set(State::Connected);
