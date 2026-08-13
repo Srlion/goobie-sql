@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.16.6](https://github.com/Srlion/goobie-sql/compare/v4.16.5...v4.16.6) (2026-08-13)
+
+
+### Bug Fixes
+
+* replace WAIT_TIMEOUT with PING_INTERVAL to keep connection alive ([84a9098](https://github.com/Srlion/goobie-sql/commit/84a90986491990c25f634b0e1d3e19ddb70d07ef))
+* update gmodx dependency version to 0.25.1 ([652b45e](https://github.com/Srlion/goobie-sql/commit/652b45eef90cf4819619c6c49e617d242806fc3e))
+
 ## [4.16.5](https://github.com/Srlion/goobie-sql/compare/4.16.4...v4.16.5) (2026-07-11)
 
 
