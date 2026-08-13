@@ -10,7 +10,7 @@ name = "gmsv_goobie_mysql"
 [dependencies]
 anyhow = "1.0.103"
 const_format = "0.2.36"
-gmodx = { version = "0.25.0", features = [
+gmodx = { version = "0.25.1", features = [
   "rust_decimal",
   "send",
   "tokio",

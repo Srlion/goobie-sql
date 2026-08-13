@@ -634,9 +634,9 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "gmodx"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffe3903e016b681f8b82a421099bc2c33c7713bf727c7316d63837415414794b"
+checksum = "cae28863c402c8b71270fc3a338f4a5045d5abe4892752fa52f6f7956a7c40de"
 dependencies = [
  "bindgen",
  "bstr",
